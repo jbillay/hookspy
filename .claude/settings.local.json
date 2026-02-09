@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch:*)",
+      "Bash(pwsh -NoProfile -File .specify/scripts/powershell/create-new-feature.ps1:*)",
+      "Bash(pwsh:*)",
+      "Bash(dir:*)",
+      "Bash(powershell:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "Bash(timeout 15 npx vite:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx vite build:*)",
+      "Bash(npm audit:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "WebSearch",
+      "Bash(git check-ignore:*)",
+      "Bash(echo:*)",
+      "Bash(npx supabase:*)",
+      "Bash(git -C C:UsersJBillayprojectshookspy status)"
+    ]
+  }
+}
