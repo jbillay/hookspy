@@ -175,7 +175,7 @@ npm run test:coverage # Run Vitest with coverage
 
 ## Environment Variables
 
-### Frontend (prefixed with VITE_)
+### Frontend (prefixed with VITE\_)
 
 - `VITE_SUPABASE_URL` — Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` — Supabase anonymous/public key

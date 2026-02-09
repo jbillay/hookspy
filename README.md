@@ -54,17 +54,17 @@ HookSpy is an open-source webhook debugging tool that gives you a unique public 
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Vue 3 (Composition API) + Vite |
-| UI Components | PrimeVue 4 (Aura theme) |
-| Styling | Tailwind CSS |
-| Backend | Vercel Serverless Functions (JavaScript) |
-| Database | Supabase (PostgreSQL) |
-| Auth | Supabase Auth |
-| Real-time | Supabase Realtime |
-| Hosting | Vercel |
-| CI/CD | GitHub Actions |
+| Layer         | Technology                               |
+| ------------- | ---------------------------------------- |
+| Frontend      | Vue 3 (Composition API) + Vite           |
+| UI Components | PrimeVue 4 (Aura theme)                  |
+| Styling       | Tailwind CSS                             |
+| Backend       | Vercel Serverless Functions (JavaScript) |
+| Database      | Supabase (PostgreSQL)                    |
+| Auth          | Supabase Auth                            |
+| Real-time     | Supabase Realtime                        |
+| Hosting       | Vercel                                   |
+| CI/CD         | GitHub Actions                           |
 
 ## Prerequisites
 
@@ -144,14 +144,14 @@ Since HookSpy relays webhooks through the browser, your local development server
 
 Most frameworks have CORS middleware available:
 
-| Framework | Package |
-|-----------|---------|
-| Express.js | `cors` |
-| Flask | `flask-cors` |
-| Django | `django-cors-headers` |
+| Framework   | Package                   |
+| ----------- | ------------------------- |
+| Express.js  | `cors`                    |
+| Flask       | `flask-cors`              |
+| Django      | `django-cors-headers`     |
 | Spring Boot | `@CrossOrigin` annotation |
-| ASP.NET | `UseCors()` middleware |
-| FastAPI | `CORSMiddleware` |
+| ASP.NET     | `UseCors()` middleware    |
+| FastAPI     | `CORSMiddleware`          |
 
 ## Contributing
 
