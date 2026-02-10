@@ -4,7 +4,7 @@ export function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', allowedOrigin)
   res.setHeader(
     'Access-Control-Allow-Methods',
-    'GET, POST, PUT, DELETE, OPTIONS',
+    'GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS',
   )
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   res.setHeader('Access-Control-Max-Age', '86400')

@@ -1,4 +1,4 @@
-﻿# HookSpy - Project Guide
+# HookSpy - Project Guide
 
 ## Project Overview
 
