@@ -24,6 +24,21 @@ const routes = [
     name: 'dashboard',
     component: () => import('../views/DashboardView.vue'),
   },
+  {
+    path: '/endpoints',
+    name: 'endpoints',
+    component: () => import('../views/EndpointsView.vue'),
+  },
+  {
+    path: '/endpoints/new',
+    name: 'endpoint-new',
+    component: () => import('../views/EndpointDetailView.vue'),
+  },
+  {
+    path: '/endpoints/:id',
+    name: 'endpoint-detail',
+    component: () => import('../views/EndpointDetailView.vue'),
+  },
 ]
 
 const router = createRouter({
