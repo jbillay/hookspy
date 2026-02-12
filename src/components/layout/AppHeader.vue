@@ -1,6 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
+import RelayStatus from '../relay/RelayStatus.vue'
 import { useAuth } from '../../composables/use-auth.js'
 
 const router = useRouter()
@@ -33,6 +34,7 @@ async function handleLogout() {
       </nav>
     </div>
     <div class="flex items-center gap-3">
+      <RelayStatus />
       <span class="text-sm text-surface-600">{{ auth.user?.email }}</span>
       <Button
         label="Logout"

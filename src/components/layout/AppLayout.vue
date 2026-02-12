@@ -2,6 +2,7 @@
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
 import AppHeader from './AppHeader.vue'
+import RelayWorker from '../relay/RelayWorker.vue'
 import { useAuth } from '../../composables/use-auth.js'
 
 const route = useRoute()
@@ -17,6 +18,7 @@ const showHeader = computed(
 <template>
   <div class="min-h-screen">
     <AppHeader v-if="showHeader" />
+    <RelayWorker v-if="showHeader" />
     <slot />
   </div>
 </template>
