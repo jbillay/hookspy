@@ -5,6 +5,7 @@ import ProgressSpinner from 'primevue/progressspinner'
 import { useToast } from 'primevue/usetoast'
 import EndpointForm from '../components/endpoints/EndpointForm.vue'
 import HeaderInjectionEditor from '../components/endpoints/HeaderInjectionEditor.vue'
+import LogList from '../components/logs/LogList.vue'
 import { useEndpoints } from '../composables/use-endpoints.js'
 
 const router = useRouter()
@@ -98,5 +99,13 @@ function handleCancel() {
         <HeaderInjectionEditor v-model="form.custom_headers" />
       </template>
     </EndpointForm>
+
+    <div
+      v-if="mode === 'edit' && !loadingEndpoint"
+      class="mt-8 border-t border-surface-200 pt-6"
+    >
+      <h2 class="text-xl font-bold mb-4">Webhook Logs</h2>
+      <LogList :endpoint-id="route.params.id" />
+    </div>
   </div>
 </template>

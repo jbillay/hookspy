@@ -31,6 +31,12 @@ async function handleLogout() {
         >
           Endpoints
         </router-link>
+        <router-link
+          to="/logs"
+          class="text-sm text-surface-600 hover:text-primary no-underline"
+        >
+          Logs
+        </router-link>
       </nav>
     </div>
     <div class="flex items-center gap-3">
