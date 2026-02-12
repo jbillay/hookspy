@@ -8,6 +8,7 @@
 List all endpoints for the authenticated user.
 
 **Response 200**:
+
 ```json
 {
   "data": [
@@ -35,6 +36,7 @@ List all endpoints for the authenticated user.
 Create a new endpoint.
 
 **Request Body**:
+
 ```json
 {
   "name": "My Webhook",
@@ -49,6 +51,7 @@ Create a new endpoint.
 All fields except `name` are optional (defaults apply).
 
 **Response 201**:
+
 ```json
 {
   "data": {
@@ -83,6 +86,7 @@ Get a single endpoint by ID.
 Update an existing endpoint.
 
 **Request Body** (partial update — only include fields to change):
+
 ```json
 {
   "name": "Updated Name",
@@ -115,6 +119,7 @@ CORS preflight.
 ## Error Response Format
 
 All errors follow:
+
 ```json
 {
   "error": "Human-readable error message"
@@ -124,6 +129,7 @@ All errors follow:
 ## CORS Headers
 
 Applied to all responses:
+
 ```
 Access-Control-Allow-Origin: <VITE_APP_URL or *>
 Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS

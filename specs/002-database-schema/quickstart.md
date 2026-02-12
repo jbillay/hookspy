@@ -35,6 +35,7 @@ supabase db reset
 ### 3. Verify Tables
 
 After running migrations, verify in the Supabase dashboard:
+
 - **Table Editor**: `endpoints` and `webhook_logs` tables exist
 - **Authentication > Policies**: RLS policies are active on both tables
 - **Database > Extensions**: `pg_cron` extension is enabled
@@ -57,12 +58,12 @@ SELECT * FROM endpoints;
 
 The following migration files are created in `supabase/migrations/`:
 
-| File | Purpose |
-|------|---------|
-| `20260209000001_create_tables.sql` | Tables, indexes, trigger function, trigger |
-| `20260209000002_enable_rls.sql` | RLS enable + all policies |
-| `20260209000003_enable_realtime.sql` | Realtime publication for webhook_logs |
-| `20260209000004_setup_cron_cleanup.sql` | pg_cron extension + cleanup job |
+| File                                    | Purpose                                    |
+| --------------------------------------- | ------------------------------------------ |
+| `20260209000001_create_tables.sql`      | Tables, indexes, trigger function, trigger |
+| `20260209000002_enable_rls.sql`         | RLS enable + all policies                  |
+| `20260209000003_enable_realtime.sql`    | Realtime publication for webhook_logs      |
+| `20260209000004_setup_cron_cleanup.sql` | pg_cron extension + cleanup job            |
 
 ## Validation Checklist
 
@@ -85,6 +86,7 @@ After running migrations:
 **pg_cron not available**: Check that your Supabase project has the `pg_cron` extension enabled in Dashboard > Database > Extensions.
 
 **Realtime events not received**: Verify `webhook_logs` is in the `supabase_realtime` publication:
+
 ```sql
 SELECT * FROM pg_publication_tables WHERE pubname = 'supabase_realtime';
 ```

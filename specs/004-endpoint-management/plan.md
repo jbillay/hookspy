@@ -21,15 +21,15 @@ Implement full CRUD for webhook endpoints: Vercel serverless API functions (`api
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principle | Status | Notes |
-|-----------|--------|-------|
-| I. Plain JavaScript | PASS | All code is plain JS with ES modules |
-| II. Browser-as-Bridge | PASS | Endpoint management is UI + API only; no CLI/tunnel |
-| III. Full HTTP Fidelity | PASS | Custom headers are additive only (stored in JSONB, merged at relay time) |
-| IV. Meaningful Testing | PASS | Tests cover store, API handlers, and form validation logic |
-| V. Simplicity & YAGNI | PASS | Minimal CRUD + config; no unnecessary abstractions |
+| Principle               | Status | Notes                                                                    |
+| ----------------------- | ------ | ------------------------------------------------------------------------ |
+| I. Plain JavaScript     | PASS   | All code is plain JS with ES modules                                     |
+| II. Browser-as-Bridge   | PASS   | Endpoint management is UI + API only; no CLI/tunnel                      |
+| III. Full HTTP Fidelity | PASS   | Custom headers are additive only (stored in JSONB, merged at relay time) |
+| IV. Meaningful Testing  | PASS   | Tests cover store, API handlers, and form validation logic               |
+| V. Simplicity & YAGNI   | PASS   | Minimal CRUD + config; no unnecessary abstractions                       |
 
 All gates pass. No violations to justify.
 

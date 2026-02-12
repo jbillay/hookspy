@@ -12,6 +12,7 @@
 **Rationale**: UUIDs provide sufficient entropy for a developer tool. 8 hex chars = 4 billion combinations, more than enough. Simple to implement with `crypto.randomUUID().replace(/-/g, '').slice(0, 8)`.
 
 **Alternatives considered**:
+
 - nanoid: Additional dependency for marginal benefit
 - Full UUID as slug: Too long for URLs
 - User-defined slugs: Added complexity for little value; auto-generation is simpler
@@ -23,6 +24,7 @@
 **Rationale**: The database already defines `custom_headers jsonb DEFAULT '{}'`. A flat key-value object is the simplest representation, maps directly to HTTP headers, and is easy to merge with incoming request headers at relay time. Duplicate header keys are not supported (last-write-wins), which aligns with HTTP semantics for most headers.
 
 **Alternatives considered**:
+
 - Array of `{key, value}` objects: More complex to query, no benefit for this use case
 - Separate headers table: Over-normalized; JSONB is sufficient for a small set of custom headers
 
@@ -33,6 +35,7 @@
 **Rationale**: Matches CLAUDE.md structure exactly. Method switching inside each handler is the standard Vercel pattern. Uses the service role Supabase client to bypass RLS for server-side operations (auth validated via JWT first).
 
 **Alternatives considered**:
+
 - Separate files per method: Vercel doesn't support this natively
 - API middleware framework: Over-engineered for 2 route files
 
@@ -43,6 +46,7 @@
 **Rationale**: The frontend SPA calls the API from the same domain (Vercel), so CORS is primarily needed for local development (`localhost:5173` → `localhost:3000` or Vercel API). A shared helper avoids repetition across all API files.
 
 **Alternatives considered**:
+
 - Vercel `vercel.json` headers config: Less flexible, can't conditionally set origin
 - No CORS helper: Would require duplicating headers in every API file
 
@@ -53,6 +57,7 @@
 **Rationale**: Consistency with existing codebase. The store fetches from the API using the Supabase client's `session.access_token` for auth. Loading and error states managed per-operation.
 
 **Alternatives considered**:
+
 - Direct Supabase client calls from components: Bypasses the store pattern, loses centralized state
 - Options API store: Inconsistent with existing auth store
 
@@ -63,6 +68,7 @@
 **Rationale**: Avoids duplicating form fields, validation logic, and header injection editor. The only differences are: create mode has empty defaults and submits POST; edit mode pre-populates and submits PUT.
 
 **Alternatives considered**:
+
 - Separate create and edit forms: Code duplication
 - Single view with route-based mode detection: This is effectively what we're doing — `EndpointDetailView.vue` detects `/endpoints/new` vs `/endpoints/:id`
 
@@ -73,5 +79,6 @@
 **Rationale**: Quick toggle is the primary UX goal (Story 5). Going through the edit form for a single boolean is too many clicks. Optimistic update with error rollback provides instant feedback.
 
 **Alternatives considered**:
+
 - Toggle only in edit view: Too cumbersome for a quick action
 - Dropdown menu with "Activate/Deactivate": Extra click for no benefit

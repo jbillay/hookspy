@@ -41,6 +41,7 @@
 **Goal**: All tables, indexes, constraints, and triggers are created correctly when migrations run against a fresh Supabase project. Data integrity is enforced at the database level.
 
 **Independent Test**: Run migration file 1 against a clean Supabase database using `supabase db push` or SQL editor. Verify:
+
 - Both tables exist with correct columns and types
 - `slug` UNIQUE constraint rejects duplicates
 - `user_id` NOT NULL constraint rejects null inserts
@@ -181,6 +182,7 @@ Task: "Create pg_cron migration in supabase/migrations/20260209000004_setup_cron
 ### Parallel Strategy
 
 After Foundational phase:
+
 - Migration 2 (RLS), Migration 3 (Realtime), Migration 4 (Cron) can be written simultaneously
 - Final validation (Phase 7) runs all migrations end-to-end
 

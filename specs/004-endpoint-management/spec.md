@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: CRUD operations for webhook endpoints with configuration
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - User Creates a Webhook Endpoint (Priority: P1)
 
@@ -112,7 +112,7 @@ states. Inactive endpoints reject incoming webhooks with a 404 response.
 - What happens with a very long custom header value? No validation limit; database text type handles it
 - Is there a maximum number of endpoints per user? No limit; endpoint count is naturally self-limiting for a developer tool
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -143,7 +143,7 @@ states. Inactive endpoints reject incoming webhooks with a 404 response.
 - Q: What should the endpoints list show when the user has no endpoints? → A: Empty state with a call-to-action message and "Create your first endpoint" button
 - Q: Should there be a maximum number of endpoints per user? → A: No limit; naturally self-limiting for a developer tool
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

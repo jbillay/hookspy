@@ -21,27 +21,27 @@ Create the foundational database schema for HookSpy using Supabase PostgreSQL. T
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principle | Status | Notes |
-|-----------|--------|-------|
-| I. Plain JavaScript, No Exceptions | PASS | Migration files are SQL (not JS). No TypeScript. |
-| II. Browser-as-Bridge | PASS | Schema enables Realtime notifications to browser via webhook_logs publication. No alternative relay mechanism introduced. |
-| III. Full HTTP Fidelity | PASS | Schema stores complete request/response headers and bodies as-is (jsonb/text). No transformation. custom_headers is additive only per spec. |
-| IV. Meaningful Testing | PASS | Acceptance scenarios test constraint enforcement, RLS isolation, Realtime events, and cleanup. No PrimeVue/Tailwind testing involved. |
-| V. Simplicity & Minimal Scope | PASS | Only two tables, standard PostgreSQL features (RLS, triggers, pg_cron). No over-engineering. |
+| Principle                          | Status | Notes                                                                                                                                       |
+| ---------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| I. Plain JavaScript, No Exceptions | PASS   | Migration files are SQL (not JS). No TypeScript.                                                                                            |
+| II. Browser-as-Bridge              | PASS   | Schema enables Realtime notifications to browser via webhook_logs publication. No alternative relay mechanism introduced.                   |
+| III. Full HTTP Fidelity            | PASS   | Schema stores complete request/response headers and bodies as-is (jsonb/text). No transformation. custom_headers is additive only per spec. |
+| IV. Meaningful Testing             | PASS   | Acceptance scenarios test constraint enforcement, RLS isolation, Realtime events, and cleanup. No PrimeVue/Tailwind testing involved.       |
+| V. Simplicity & Minimal Scope      | PASS   | Only two tables, standard PostgreSQL features (RLS, triggers, pg_cron). No over-engineering.                                                |
 
 **Gate result**: PASS — no violations.
 
 ### Post-Phase 1 Re-check
 
-| Principle | Status | Notes |
-|-----------|--------|-------|
-| I. Plain JavaScript | PASS | All SQL, no JS code in this feature |
-| II. Browser-as-Bridge | PASS | Realtime on webhook_logs enables browser push |
-| III. Full HTTP Fidelity | PASS | request_headers/body and response_headers/body stored as-is |
-| IV. Meaningful Testing | PASS | Data model includes testable constraints and RLS scenarios |
-| V. Simplicity | PASS | 4 focused migration files, standard Postgres patterns |
+| Principle               | Status | Notes                                                       |
+| ----------------------- | ------ | ----------------------------------------------------------- |
+| I. Plain JavaScript     | PASS   | All SQL, no JS code in this feature                         |
+| II. Browser-as-Bridge   | PASS   | Realtime on webhook_logs enables browser push               |
+| III. Full HTTP Fidelity | PASS   | request_headers/body and response_headers/body stored as-is |
+| IV. Meaningful Testing  | PASS   | Data model includes testable constraints and RLS scenarios  |
+| V. Simplicity           | PASS   | 4 focused migration files, standard Postgres patterns       |
 
 **Gate result**: PASS — no violations.
 

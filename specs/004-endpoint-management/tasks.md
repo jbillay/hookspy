@@ -17,7 +17,7 @@
 
 **Purpose**: Create shared helpers and foundational plumbing needed by all user stories
 
-- [x] T001 Create CORS helper with setCorsHeaders and OPTIONS handling in api/_lib/cors.js
+- [x] T001 Create CORS helper with setCorsHeaders and OPTIONS handling in api/\_lib/cors.js
 - [x] T002 Create Pinia endpoints store with state (endpoints, loading, error), fetchEndpoints, createEndpoint, updateEndpoint, deleteEndpoint methods in src/stores/endpoints.js
 - [x] T003 Create useEndpoints composable (thin wrapper around endpoints store) in src/composables/use-endpoints.js
 

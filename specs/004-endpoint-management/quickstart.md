@@ -21,26 +21,18 @@ npm run dev
 ### 2. Key files to implement (in order)
 
 **API layer** (server-side):
+
 1. `api/_lib/cors.js` — CORS helper (shared by all API routes)
 2. `api/endpoints/index.js` — GET list + POST create
 3. `api/endpoints/[id].js` — GET single + PUT update + DELETE
 
-**State layer** (client-side):
-4. `src/stores/endpoints.js` — Pinia store with CRUD methods
-5. `src/composables/use-endpoints.js` — Thin wrapper
+**State layer** (client-side): 4. `src/stores/endpoints.js` — Pinia store with CRUD methods 5. `src/composables/use-endpoints.js` — Thin wrapper
 
-**UI components**:
-6. `src/components/endpoints/HeaderInjectionEditor.vue` — Key-value pair editor
-7. `src/components/endpoints/EndpointForm.vue` — Create/edit form (uses HeaderInjectionEditor)
-8. `src/components/endpoints/EndpointCard.vue` — Card for list view
+**UI components**: 6. `src/components/endpoints/HeaderInjectionEditor.vue` — Key-value pair editor 7. `src/components/endpoints/EndpointForm.vue` — Create/edit form (uses HeaderInjectionEditor) 8. `src/components/endpoints/EndpointCard.vue` — Card for list view
 
-**Views & routing**:
-9. `src/views/EndpointsView.vue` — List view with empty state
-10. `src/views/EndpointDetailView.vue` — Create/edit view
-11. `src/router/index.js` — Add routes for endpoints
+**Views & routing**: 9. `src/views/EndpointsView.vue` — List view with empty state 10. `src/views/EndpointDetailView.vue` — Create/edit view 11. `src/router/index.js` — Add routes for endpoints
 
-**Navigation**:
-12. `src/components/layout/AppHeader.vue` — Add endpoints nav link
+**Navigation**: 12. `src/components/layout/AppHeader.vue` — Add endpoints nav link
 
 ### 3. Testing
 

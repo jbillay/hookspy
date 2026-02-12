@@ -22,7 +22,19 @@
       "Bash(git check-ignore:*)",
       "Bash(echo:*)",
       "Bash(npx supabase:*)",
-      "Bash(git -C C:UsersJBillayprojectshookspy status)"
+      "Bash(git -C C:UsersJBillayprojectshookspy status)",
+      "Bash(git push:*)",
+      "Bash(if exist \"C:\\\\Users\\\\JBillay\\\\projects\\\\hookspy\\\\nul\" del \"C:\\\\Users\\\\JBillay\\\\projects\\\\hookspy\\\\nul\")",
+      "Bash(copy \"C:\\\\Users\\\\JBillay\\\\projects\\\\hookspy\\\\.specify\\\\specs\\\\004-endpoint-management\\\\spec.md\" \"C:\\\\Users\\\\JBillay\\\\projects\\\\hookspy\\\\specs\\\\004-endpoint-management\\\\spec.md\")",
+      "Bash(ls:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run format:*)",
+      "Bash(git remote get-url:*)",
+      "Bash(git stash push:*)",
+      "Bash(npm run lint:fix:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm run build:*)",
+      "Bash(git status:*)"
     ]
   }
 }
