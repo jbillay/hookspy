@@ -20,7 +20,8 @@ vi.mock('../../../api/_lib/cors.js', () => ({
   setCorsHeaders: vi.fn(),
 }))
 
-const { default: handler, config } = await import('../../../api/hook/[...slug].js')
+const { default: handler, config } =
+  await import('../../../api/hook/[...slug].js')
 
 function createMockReq(overrides = {}) {
   return {
