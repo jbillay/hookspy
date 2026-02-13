@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from './auth.js'
 import { useEndpointsStore } from './endpoints.js'
 import { useSupabase } from '../composables/use-supabase.js'
@@ -14,6 +14,22 @@ export const useLogsStore = defineStore('logs', () => {
   const endpointFilter = ref(null)
   const channel = ref(null)
 
+  // Filter state
+  const methodFilter = ref([])
+  const statusFilter = ref([])
+  const searchQuery = ref('')
+  const dateFrom = ref(null)
+  const dateTo = ref(null)
+
+  const hasActiveFilters = computed(
+    () =>
+      methodFilter.value.length > 0 ||
+      statusFilter.value.length > 0 ||
+      searchQuery.value !== '' ||
+      dateFrom.value !== null ||
+      dateTo.value !== null,
+  )
+
   function getAuthHeaders() {
     const authStore = useAuthStore()
     const token = authStore.session?.access_token
@@ -21,6 +37,35 @@ export const useLogsStore = defineStore('logs', () => {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     }
+  }
+
+  function matchesFilters(log) {
+    if (
+      methodFilter.value.length > 0 &&
+      !methodFilter.value.includes(log.request_method)
+    ) {
+      return false
+    }
+    if (
+      statusFilter.value.length > 0 &&
+      !statusFilter.value.includes(log.status)
+    ) {
+      return false
+    }
+    if (searchQuery.value) {
+      const q = searchQuery.value.toLowerCase()
+      const fields = [
+        log.request_body,
+        log.request_url,
+        log.response_body,
+        log.error_message,
+      ]
+      const matches = fields.some(
+        (f) => f && String(f).toLowerCase().includes(q),
+      )
+      if (!matches) return false
+    }
+    return true
   }
 
   async function fetchLogs() {
@@ -33,6 +78,21 @@ export const useLogsStore = defineStore('logs', () => {
       })
       if (endpointFilter.value) {
         params.set('endpoint_id', endpointFilter.value)
+      }
+      if (methodFilter.value.length > 0) {
+        params.set('method', methodFilter.value.join(','))
+      }
+      if (statusFilter.value.length > 0) {
+        params.set('status', statusFilter.value.join(','))
+      }
+      if (dateFrom.value) {
+        params.set('from', dateFrom.value.toISOString())
+      }
+      if (dateTo.value) {
+        params.set('to', dateTo.value.toISOString())
+      }
+      if (searchQuery.value) {
+        params.set('q', searchQuery.value)
       }
       const res = await fetch(`/api/logs?${params}`, {
         headers: getAuthHeaders(),
@@ -64,6 +124,57 @@ export const useLogsStore = defineStore('logs', () => {
     return fetchLogs()
   }
 
+  function setMethodFilter(methods) {
+    methodFilter.value = methods
+    currentPage.value = 1
+    return fetchLogs()
+  }
+
+  function setStatusFilter(statuses) {
+    statusFilter.value = statuses
+    currentPage.value = 1
+    return fetchLogs()
+  }
+
+  function setSearchQuery(query) {
+    searchQuery.value = query
+    currentPage.value = 1
+    return fetchLogs()
+  }
+
+  function setDateRange(from, to) {
+    dateFrom.value = from
+    dateTo.value = to
+    currentPage.value = 1
+    return fetchLogs()
+  }
+
+  function clearAllFilters() {
+    methodFilter.value = []
+    statusFilter.value = []
+    searchQuery.value = ''
+    dateFrom.value = null
+    dateTo.value = null
+    currentPage.value = 1
+    return fetchLogs()
+  }
+
+  async function replayLog(logId) {
+    try {
+      const res = await fetch(`/api/logs/${logId}/replay`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        return { error: json.error || 'Failed to replay webhook' }
+      }
+      return { data: json.data }
+    } catch (err) {
+      return { error: err.message }
+    }
+  }
+
   function startSubscription() {
     const endpointsStore = useEndpointsStore()
     const ids = endpointFilter.value
@@ -86,9 +197,9 @@ export const useLogsStore = defineStore('logs', () => {
           filter: filterStr,
         },
         (payload) => {
-          if (currentPage.value === 1) {
+          totalCount.value++
+          if (currentPage.value === 1 && matchesFilters(payload.new)) {
             logs.value.unshift(payload.new)
-            totalCount.value++
           }
         },
       )
@@ -128,9 +239,21 @@ export const useLogsStore = defineStore('logs', () => {
     currentPage,
     pageSize,
     endpointFilter,
+    methodFilter,
+    statusFilter,
+    searchQuery,
+    dateFrom,
+    dateTo,
+    hasActiveFilters,
     fetchLogs,
     setEndpointFilter,
     setPage,
+    setMethodFilter,
+    setStatusFilter,
+    setSearchQuery,
+    setDateRange,
+    clearAllFilters,
+    replayLog,
     startSubscription,
     stopSubscription,
   }

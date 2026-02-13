@@ -15,21 +15,58 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: authError })
   }
 
-  const { endpoint_id, page = '1', limit = '50' } = req.query
+  const {
+    endpoint_id,
+    page = '1',
+    limit = '50',
+    method,
+    status,
+    from: dateFrom,
+    to: dateTo,
+    q,
+  } = req.query
   const pageNum = Math.max(1, parseInt(page, 10) || 1)
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 50))
-  const from = (pageNum - 1) * limitNum
-  const to = from + limitNum - 1
+  const rangeFrom = (pageNum - 1) * limitNum
+  const rangeTo = rangeFrom + limitNum - 1
 
   let query = supabase
     .from('webhook_logs')
     .select('*, endpoints!inner(name, slug, user_id)', { count: 'exact' })
     .eq('endpoints.user_id', user.id)
     .order('received_at', { ascending: false })
-    .range(from, to)
+    .range(rangeFrom, rangeTo)
 
   if (endpoint_id) {
     query = query.eq('endpoint_id', endpoint_id)
+  }
+
+  if (method) {
+    const methods = method.split(',').filter(Boolean)
+    if (methods.length > 0) {
+      query = query.in('request_method', methods)
+    }
+  }
+
+  if (status) {
+    const statuses = status.split(',').filter(Boolean)
+    if (statuses.length > 0) {
+      query = query.in('status', statuses)
+    }
+  }
+
+  if (dateFrom) {
+    query = query.gte('received_at', dateFrom)
+  }
+
+  if (dateTo) {
+    query = query.lte('received_at', dateTo)
+  }
+
+  if (q) {
+    query = query.or(
+      `request_body.ilike.%${q}%,request_url.ilike.%${q}%,response_body.ilike.%${q}%,error_message.ilike.%${q}%`,
+    )
   }
 
   const { data, error, count } = await query

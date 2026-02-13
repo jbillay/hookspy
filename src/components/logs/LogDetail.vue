@@ -1,13 +1,44 @@
 <script setup>
+import { ref } from 'vue'
 import Tag from 'primevue/tag'
+import Button from 'primevue/button'
+import { useToast } from 'primevue/usetoast'
 import PayloadViewer from './PayloadViewer.vue'
+import { useLogs } from '../../composables/use-logs.js'
 
-defineProps({
+const props = defineProps({
   log: {
     type: Object,
     required: true,
   },
 })
+
+const store = useLogs()
+const toast = useToast()
+const replayLoading = ref(false)
+
+const terminalStatuses = ['responded', 'timeout', 'error']
+
+async function handleReplay() {
+  replayLoading.value = true
+  const { error } = await store.replayLog(props.log.id)
+  replayLoading.value = false
+  if (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Replay Failed',
+      detail: error,
+      life: 5000,
+    })
+  } else {
+    toast.add({
+      severity: 'success',
+      summary: 'Replayed',
+      detail: 'Webhook replayed',
+      life: 3000,
+    })
+  }
+}
 
 function formatDuration(ms) {
   if (ms == null) return '—'
@@ -51,6 +82,24 @@ function statusCodeSeverity(code) {
       <span v-if="log.duration_ms != null"
         >Duration: {{ formatDuration(log.duration_ms) }}</span
       >
+      <Tag
+        v-if="log.replayed_from"
+        value="Replay"
+        severity="info"
+        icon="pi pi-replay"
+      />
+      <div class="ml-auto">
+        <Button
+          v-if="terminalStatuses.includes(log.status)"
+          label="Replay"
+          icon="pi pi-replay"
+          severity="secondary"
+          text
+          size="small"
+          :loading="replayLoading"
+          @click="handleReplay"
+        />
+      </div>
     </div>
 
     <div class="grid grid-cols-2 gap-4">

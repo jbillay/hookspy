@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 import Paginator from 'primevue/paginator'
 import ProgressSpinner from 'primevue/progressspinner'
 import LogDetail from './LogDetail.vue'
+import LogFilters from './LogFilters.vue'
 import { useLogs } from '../../composables/use-logs.js'
 
 const props = defineProps({
@@ -16,16 +18,88 @@ const props = defineProps({
 })
 
 const store = useLogs()
+const router = useRouter()
+const route = useRoute()
 const expandedRows = ref({})
 
 const showEndpointColumn = computed(() => !props.endpointId)
+
+// Initialize filters from URL query params
+const filters = ref({
+  q: route.query.q || '',
+  method: route.query.method ? route.query.method.split(',') : [],
+  status: route.query.status ? route.query.status.split(',') : [],
+  from: route.query.from ? new Date(route.query.from) : null,
+  to: route.query.to ? new Date(route.query.to) : null,
+})
+
+function buildQueryParams() {
+  const params = {}
+  if (filters.value.q) params.q = filters.value.q
+  if (filters.value.method.length > 0)
+    params.method = filters.value.method.join(',')
+  if (filters.value.status.length > 0)
+    params.status = filters.value.status.join(',')
+  if (filters.value.from) params.from = filters.value.from.toISOString()
+  if (filters.value.to) params.to = filters.value.to.toISOString()
+  return params
+}
+
+function onFiltersUpdate(newFilters) {
+  const prev = filters.value
+  filters.value = newFilters
+
+  // Only call store actions for changed values
+  if (newFilters.q !== prev.q) {
+    store.setSearchQuery(newFilters.q)
+  }
+  if (newFilters.method.join(',') !== prev.method.join(',')) {
+    store.setMethodFilter(newFilters.method)
+  }
+  if (newFilters.status.join(',') !== prev.status.join(',')) {
+    store.setStatusFilter(newFilters.status)
+  }
+  if (
+    newFilters.from?.toISOString() !== prev.from?.toISOString() ||
+    newFilters.to?.toISOString() !== prev.to?.toISOString()
+  ) {
+    store.setDateRange(newFilters.from, newFilters.to)
+  }
+
+  router.replace({ query: buildQueryParams() })
+}
+
+function clearFilters() {
+  filters.value = { q: '', method: [], status: [], from: null, to: null }
+  store.clearAllFilters()
+  router.replace({ query: {} })
+}
 
 onMounted(async () => {
   if (props.endpointId) {
     await store.setEndpointFilter(props.endpointId)
   } else {
-    await store.setEndpointFilter(null)
+    store.endpointFilter = null
   }
+
+  // Apply URL filters to store before fetching
+  if (filters.value.method.length > 0) {
+    store.methodFilter = filters.value.method
+  }
+  if (filters.value.status.length > 0) {
+    store.statusFilter = filters.value.status
+  }
+  if (filters.value.q) {
+    store.searchQuery = filters.value.q
+  }
+  if (filters.value.from) {
+    store.dateFrom = filters.value.from
+  }
+  if (filters.value.to) {
+    store.dateTo = filters.value.to
+  }
+
+  await store.fetchLogs()
   store.startSubscription()
 })
 
@@ -86,11 +160,33 @@ function onPageChange(event) {
 
 <template>
   <div>
+    <LogFilters
+      :model-value="filters"
+      @update:model-value="onFiltersUpdate"
+      @clear="clearFilters"
+    />
+
     <div
       v-if="store.loading && store.logs.length === 0"
       class="flex justify-center py-8"
     >
       <ProgressSpinner />
+    </div>
+
+    <div
+      v-else-if="
+        !store.loading && store.logs.length === 0 && store.hasActiveFilters
+      "
+      class="text-center py-8 text-surface-400"
+    >
+      <i class="pi pi-filter-slash text-4xl mb-2 block"></i>
+      <p>No logs match your filters</p>
+      <a
+        href="#"
+        class="text-primary text-sm mt-1 inline-block"
+        @click.prevent="clearFilters"
+        >Clear filters</a
+      >
     </div>
 
     <div
@@ -140,13 +236,20 @@ function onPageChange(event) {
             }}</span>
           </template>
         </Column>
-        <Column field="status" header="Status" style="width: 8rem">
+        <Column field="status" header="Status" style="width: 10rem">
           <template #body="{ data }">
-            <Tag
-              :value="statusLabel(data.status)"
-              :severity="statusSeverity(data.status)"
-              :class="{ 'status-pulse': data.status === 'forwarding' }"
-            />
+            <div class="flex items-center gap-1">
+              <Tag
+                :value="statusLabel(data.status)"
+                :severity="statusSeverity(data.status)"
+                :class="{ 'status-pulse': data.status === 'forwarding' }"
+              />
+              <i
+                v-if="data.replayed_from"
+                class="pi pi-replay text-blue-500"
+                title="Replayed webhook"
+              />
+            </div>
           </template>
         </Column>
         <Column field="duration_ms" header="Duration" style="width: 6rem">
