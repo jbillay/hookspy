@@ -49,10 +49,10 @@ describe('useDashboard', () => {
   describe('computed properties', () => {
     it('returns correct endpoint counts', () => {
       const dashboard = useDashboard()
-      expect(dashboard.totalEndpoints.value).toBe(3)
-      expect(dashboard.activeEndpoints.value).toBe(2)
-      expect(dashboard.inactiveEndpoints.value).toBe(1)
-      expect(dashboard.hasEndpoints.value).toBe(true)
+      expect(dashboard.totalEndpoints).toBe(3)
+      expect(dashboard.activeEndpoints).toBe(2)
+      expect(dashboard.inactiveEndpoints).toBe(1)
+      expect(dashboard.hasEndpoints).toBe(true)
     })
   })
 
@@ -71,9 +71,9 @@ describe('useDashboard', () => {
       await dashboard.fetchStats()
 
       expect(global.fetch).toHaveBeenCalledTimes(2)
-      expect(dashboard.recentLogs.value).toEqual(mockLogs)
-      expect(dashboard.requestCount24h.value).toBe(15)
-      expect(dashboard.loadingStats.value).toBe(false)
+      expect(dashboard.recentLogs).toEqual(mockLogs)
+      expect(dashboard.requestCount24h).toBe(15)
+      expect(dashboard.loadingStats).toBe(false)
     })
 
     it('handles fetch errors gracefully', async () => {
@@ -82,7 +82,7 @@ describe('useDashboard', () => {
       const dashboard = useDashboard()
       await dashboard.fetchStats()
 
-      expect(dashboard.loadingStats.value).toBe(false)
+      expect(dashboard.loadingStats).toBe(false)
     })
   })
 

@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useEndpointsStore } from '../stores/endpoints.js'
 import { useSupabase } from './use-supabase.js'
@@ -7,8 +7,6 @@ const recentLogs = ref([])
 const requestCount24h = ref(0)
 const loadingStats = ref(false)
 const channel = ref(null)
-
-console.log('[dashboard module] initialized, recentLogs:', recentLogs.value.length)
 
 export function formatTimeAgo(timestamp) {
   if (!timestamp) return '—'
@@ -43,11 +41,9 @@ export function useDashboard() {
 
   async function fetchStats() {
     loadingStats.value = true
-    console.log('[dashboard] fetchStats start, recentLogs length:', recentLogs.value.length)
     try {
       const headers = getAuthHeaders()
       if (!headers) {
-        console.log('[dashboard] no auth headers, bailing')
         return
       }
       const twentyFourHoursAgo = new Date(
@@ -62,20 +58,16 @@ export function useDashboard() {
       const recentJson = await recentRes.json()
       const countJson = await countRes.json()
 
-      console.log('[dashboard] recentRes.ok:', recentRes.ok, 'data length:', recentJson.data?.length, 'raw:', JSON.stringify(recentJson).substring(0, 200))
-
       if (recentRes.ok) {
         recentLogs.value = recentJson.data || []
       }
-      console.log('[dashboard] after set, recentLogs length:', recentLogs.value.length)
       if (countRes.ok) {
         requestCount24h.value = countJson.total || 0
       }
-    } catch (err) {
-      console.error('[dashboard] fetchStats error:', err)
+    } catch {
+      // Silently fail — dashboard still shows endpoint stats
     } finally {
       loadingStats.value = false
-      console.log('[dashboard] fetchStats done, recentLogs length:', recentLogs.value.length)
     }
   }
 
@@ -97,7 +89,6 @@ export function useDashboard() {
           filter: filterStr,
         },
         (payload) => {
-          console.log('[dashboard] Realtime INSERT event:', JSON.stringify(payload).substring(0, 200))
           const ep = endpointsStore.endpoints.find(
             (e) => e.id === payload.new.endpoint_id,
           )
@@ -141,7 +132,7 @@ export function useDashboard() {
     }
   }
 
-  return {
+  return reactive({
     recentLogs,
     requestCount24h,
     loadingStats,
@@ -152,5 +143,5 @@ export function useDashboard() {
     fetchStats,
     startSubscription,
     stopSubscription,
-  }
+  })
 }
