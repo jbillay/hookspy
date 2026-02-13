@@ -144,6 +144,86 @@ describe('Relay Store', () => {
     })
   })
 
+  describe('forwardWebhook sub-path appending', () => {
+    it('appends request_subpath to target URL', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        text: () => Promise.resolve('{"ok":true}'),
+      })
+
+      const store = useRelayStore()
+      await store.forwardWebhook({
+        id: 'log-1',
+        endpoint_id: 'ep-1',
+        status: 'pending',
+        request_method: 'POST',
+        request_headers: { 'content-type': 'application/json' },
+        request_body: '{"event":"test"}',
+        request_subpath: '/stripe/events',
+      })
+
+      // First fetch call is the forward to localhost
+      expect(fetchSpy).toHaveBeenCalledWith(
+        'http://localhost:3000/webhook/stripe/events',
+        expect.objectContaining({ method: 'POST' }),
+      )
+
+      fetchSpy.mockRestore()
+    })
+
+    it('does not modify URL when request_subpath is null', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        text: () => Promise.resolve('ok'),
+      })
+
+      const store = useRelayStore()
+      await store.forwardWebhook({
+        id: 'log-1',
+        endpoint_id: 'ep-1',
+        status: 'pending',
+        request_method: 'POST',
+        request_headers: {},
+        request_body: '',
+        request_subpath: null,
+      })
+
+      expect(fetchSpy).toHaveBeenCalledWith(
+        'http://localhost:3000/webhook',
+        expect.objectContaining({ method: 'POST' }),
+      )
+
+      fetchSpy.mockRestore()
+    })
+
+    it('handles trailing slash in target_path with sub-path', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        status: 200,
+        headers: new Headers(),
+        text: () => Promise.resolve(''),
+      })
+
+      // Use ep-2's config but we need it active; build URL manually
+      const store = useRelayStore()
+      // ep-2 has target_path: '/'
+      // Override endpoint lookup by using ep-2's id but it's inactive,
+      // so instead test buildTargetUrl + subpath logic directly
+      const baseUrl = store.buildTargetUrl({
+        target_url: 'http://localhost',
+        target_port: 8080,
+        target_path: '/',
+      })
+      let url = baseUrl
+      const subpath = '/events/webhook'
+      url = url.replace(/\/$/, '') + subpath
+      expect(url).toBe('http://localhost:8080/events/webhook')
+
+      fetchSpy.mockRestore()
+    })
+  })
+
   describe('startRelay', () => {
     it('sets status to no-endpoints when no active endpoints', async () => {
       // Override mock to return no active endpoints

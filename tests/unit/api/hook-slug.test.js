@@ -20,12 +20,12 @@ vi.mock('../../../api/_lib/cors.js', () => ({
   setCorsHeaders: vi.fn(),
 }))
 
-const { default: handler, config } = await import('../../../api/hook/[slug].js')
+const { default: handler, config } = await import('../../../api/hook/[...slug].js')
 
 function createMockReq(overrides = {}) {
   return {
     method: 'POST',
-    query: { slug: 'test-slug' },
+    query: { slug: ['test-slug'] },
     headers: {
       'content-type': 'application/json',
       'x-custom': 'value1',
@@ -451,6 +451,76 @@ describe('webhook receiver - api/hook/[slug]', () => {
         error: 'Gateway Timeout',
         message: 'Local server did not respond within 1s',
       })
+    })
+  })
+
+  describe('sub-path parsing', () => {
+    it('handles slug with sub-path segments', async () => {
+      const respondedLog = {
+        id: 'log-1',
+        status: 'responded',
+        response_status: 200,
+        response_headers: {},
+        response_body: 'ok',
+      }
+      setupSupabaseMocks({ pollResults: [respondedLog] })
+
+      const req = createMockReq({
+        query: { slug: ['test-slug', 'stripe', 'events'] },
+        url: '/api/hook/test-slug/stripe/events',
+      })
+      const res = createMockRes()
+
+      const promise = handler(req, res)
+      await vi.runAllTimersAsync()
+      await promise
+
+      // Should look up by first segment only
+      expect(res.statusCode).toBe(200)
+    })
+
+    it('works with single slug segment (backward compat)', async () => {
+      const respondedLog = {
+        id: 'log-1',
+        status: 'responded',
+        response_status: 200,
+        response_headers: {},
+        response_body: 'ok',
+      }
+      setupSupabaseMocks({ pollResults: [respondedLog] })
+
+      const req = createMockReq({
+        query: { slug: ['test-slug'] },
+      })
+      const res = createMockRes()
+
+      const promise = handler(req, res)
+      await vi.runAllTimersAsync()
+      await promise
+
+      expect(res.statusCode).toBe(200)
+    })
+
+    it('handles string slug for backward compat', async () => {
+      const respondedLog = {
+        id: 'log-1',
+        status: 'responded',
+        response_status: 200,
+        response_headers: {},
+        response_body: 'ok',
+      }
+      setupSupabaseMocks({ pollResults: [respondedLog] })
+
+      const req = createMockReq({
+        query: { slug: 'test-slug' },
+      })
+      const res = createMockRes()
+
+      const promise = handler(req, res)
+      await vi.runAllTimersAsync()
+      await promise
+
+      expect(res.statusCode).toBe(200)
     })
   })
 

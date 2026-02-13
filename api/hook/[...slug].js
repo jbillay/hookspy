@@ -68,7 +68,13 @@ export default async function handler(req, res) {
   if (handleCors(req, res)) return
   setCorsHeaders(res)
 
-  const { slug } = req.query
+  // Catch-all route: req.query.slug is an array, e.g. ["c4572dc1", "stripe", "events"]
+  const slugSegments = Array.isArray(req.query.slug)
+    ? req.query.slug
+    : [req.query.slug]
+  const slug = slugSegments[0]
+  const subPath =
+    slugSegments.length > 1 ? '/' + slugSegments.slice(1).join('/') : null
 
   // Read raw body with size limit
   let body
@@ -111,6 +117,7 @@ export default async function handler(req, res) {
       request_url: requestUrl,
       request_headers: req.headers,
       request_body: body || null,
+      request_subpath: subPath,
     })
     .select()
     .single()

@@ -172,8 +172,12 @@ export const useRelayStore = defineStore('relay', () => {
       return
     }
 
-    // Step 3: Build target URL and headers
-    const url = buildTargetUrl(endpoint)
+    // Step 3: Build target URL and headers (append sub-path if present)
+    let url = buildTargetUrl(endpoint)
+    if (log.request_subpath) {
+      // Remove trailing slash from base URL to avoid double slashes
+      url = url.replace(/\/$/, '') + log.request_subpath
+    }
     const filteredHeaders = filterHeaders(log.request_headers)
     const mergedHeaders = {
       ...filteredHeaders,
