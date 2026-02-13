@@ -68,13 +68,18 @@ export default async function handler(req, res) {
   if (handleCors(req, res)) return
   setCorsHeaders(res)
 
-  // Catch-all route: req.query.slug is an array, e.g. ["c4572dc1", "stripe", "events"]
-  const slugSegments = Array.isArray(req.query.slug)
-    ? req.query.slug
-    : [req.query.slug]
-  const slug = slugSegments[0]
+  // Parse slug and sub-path from req.url to avoid relying on req.query.slug
+  // which may be undefined in prebuilt deployments.
+  // req.url example: /api/hook/c4572dc1/stripe/events?q=test
+  const urlPath = (req.url || '').split('?')[0]
+  const hookPrefix = '/api/hook/'
+  const afterHook = urlPath.startsWith(hookPrefix)
+    ? urlPath.slice(hookPrefix.length)
+    : ''
+  const segments = afterHook.split('/').filter(Boolean)
+  const slug = segments[0] || req.query.slug
   const subPath =
-    slugSegments.length > 1 ? '/' + slugSegments.slice(1).join('/') : null
+    segments.length > 1 ? '/' + segments.slice(1).join('/') : null
 
   // Read raw body with size limit
   let body

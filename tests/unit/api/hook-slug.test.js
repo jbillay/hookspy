@@ -502,7 +502,7 @@ describe('webhook receiver - api/hook/[slug]', () => {
       expect(res.statusCode).toBe(200)
     })
 
-    it('handles string slug for backward compat', async () => {
+    it('falls back to req.query.slug when URL has no /api/hook/ prefix', async () => {
       const respondedLog = {
         id: 'log-1',
         status: 'responded',
@@ -514,6 +514,7 @@ describe('webhook receiver - api/hook/[slug]', () => {
 
       const req = createMockReq({
         query: { slug: 'test-slug' },
+        url: '',
       })
       const res = createMockRes()
 
