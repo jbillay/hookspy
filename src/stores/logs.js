@@ -33,6 +33,7 @@ export const useLogsStore = defineStore('logs', () => {
   function getAuthHeaders() {
     const authStore = useAuthStore()
     const token = authStore.session?.access_token
+    if (!token) return null
     return {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -69,6 +70,10 @@ export const useLogsStore = defineStore('logs', () => {
   }
 
   async function fetchLogs() {
+    const headers = getAuthHeaders()
+    if (!headers) {
+      return { error: 'Not authenticated' }
+    }
     loading.value = true
     error.value = null
     try {
@@ -95,7 +100,7 @@ export const useLogsStore = defineStore('logs', () => {
         params.set('q', searchQuery.value)
       }
       const res = await fetch(`/api/logs?${params}`, {
-        headers: getAuthHeaders(),
+        headers,
       })
       const json = await res.json()
       if (!res.ok) {
@@ -160,10 +165,14 @@ export const useLogsStore = defineStore('logs', () => {
   }
 
   async function replayLog(logId) {
+    const headers = getAuthHeaders()
+    if (!headers) {
+      return { error: 'Not authenticated' }
+    }
     try {
       const res = await fetch(`/api/logs/${logId}/replay`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers,
       })
       const json = await res.json()
       if (!res.ok) {

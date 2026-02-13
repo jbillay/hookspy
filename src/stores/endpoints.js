@@ -10,6 +10,7 @@ export const useEndpointsStore = defineStore('endpoints', () => {
   function getAuthHeaders() {
     const authStore = useAuthStore()
     const token = authStore.session?.access_token
+    if (!token) return null
     return {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -17,11 +18,15 @@ export const useEndpointsStore = defineStore('endpoints', () => {
   }
 
   async function fetchEndpoints() {
+    const headers = getAuthHeaders()
+    if (!headers) {
+      return { error: 'Not authenticated' }
+    }
     loading.value = true
     error.value = null
     try {
       const res = await fetch('/api/endpoints', {
-        headers: getAuthHeaders(),
+        headers,
       })
       const json = await res.json()
       if (!res.ok) {
@@ -39,12 +44,16 @@ export const useEndpointsStore = defineStore('endpoints', () => {
   }
 
   async function createEndpoint(payload) {
+    const headers = getAuthHeaders()
+    if (!headers) {
+      return { error: 'Not authenticated' }
+    }
     loading.value = true
     error.value = null
     try {
       const res = await fetch('/api/endpoints', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers,
         body: JSON.stringify(payload),
       })
       const json = await res.json()
@@ -63,12 +72,16 @@ export const useEndpointsStore = defineStore('endpoints', () => {
   }
 
   async function updateEndpoint(id, payload) {
+    const headers = getAuthHeaders()
+    if (!headers) {
+      return { error: 'Not authenticated' }
+    }
     loading.value = true
     error.value = null
     try {
       const res = await fetch(`/api/endpoints/${id}`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
+        headers,
         body: JSON.stringify(payload),
       })
       const json = await res.json()
@@ -90,12 +103,16 @@ export const useEndpointsStore = defineStore('endpoints', () => {
   }
 
   async function deleteEndpoint(id) {
+    const headers = getAuthHeaders()
+    if (!headers) {
+      return { error: 'Not authenticated' }
+    }
     loading.value = true
     error.value = null
     try {
       const res = await fetch(`/api/endpoints/${id}`, {
         method: 'DELETE',
-        headers: getAuthHeaders(),
+        headers,
       })
       const json = await res.json()
       if (!res.ok) {
@@ -127,11 +144,15 @@ export const useEndpointsStore = defineStore('endpoints', () => {
   }
 
   async function getEndpoint(id) {
+    const headers = getAuthHeaders()
+    if (!headers) {
+      return { error: 'Not authenticated' }
+    }
     loading.value = true
     error.value = null
     try {
       const res = await fetch(`/api/endpoints/${id}`, {
-        headers: getAuthHeaders(),
+        headers,
       })
       const json = await res.json()
       if (!res.ok) {

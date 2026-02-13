@@ -9,12 +9,15 @@ import DashboardEndpointCard from '../components/dashboard/DashboardEndpointCard
 import ActivityFeed from '../components/dashboard/ActivityFeed.vue'
 import { useDashboard } from '../composables/use-dashboard.js'
 import { useEndpoints } from '../composables/use-endpoints.js'
+import { useAuth } from '../composables/use-auth.js'
 
 const dashboard = useDashboard()
 const endpoints = useEndpoints()
+const auth = useAuth()
 const router = useRouter()
 
 onMounted(async () => {
+  await auth.initAuth()
   if (endpoints.endpoints.length === 0) {
     await endpoints.fetchEndpoints()
   }

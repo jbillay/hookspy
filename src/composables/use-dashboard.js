@@ -32,6 +32,7 @@ export function useDashboard() {
   function getAuthHeaders() {
     const authStore = useAuthStore()
     const token = authStore.session?.access_token
+    if (!token) return null
     return {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -42,12 +43,15 @@ export function useDashboard() {
     loadingStats.value = true
     try {
       const headers = getAuthHeaders()
+      if (!headers) {
+        return
+      }
       const twentyFourHoursAgo = new Date(
         Date.now() - 24 * 60 * 60 * 1000,
       ).toISOString()
 
       const [recentRes, countRes] = await Promise.all([
-        fetch('/api/logs?limit=10&page=1', { headers }),
+        fetch('/api/logs?limit=5&page=1', { headers }),
         fetch(`/api/logs?limit=1&from=${twentyFourHoursAgo}`, { headers }),
       ])
 

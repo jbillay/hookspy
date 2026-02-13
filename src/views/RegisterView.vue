@@ -35,7 +35,7 @@ function validate() {
 async function handleRegister() {
   if (!validate()) return
 
-  const { error } = await auth.signUp(email.value, password.value)
+  const { data, error } = await auth.signUp(email.value, password.value)
 
   if (error) {
     const message = error.message?.includes('already registered')
@@ -46,6 +46,16 @@ async function handleRegister() {
       summary: 'Error',
       detail: message,
       life: 5000,
+    })
+    return
+  }
+
+  if (!data?.session) {
+    toast.add({
+      severity: 'info',
+      summary: 'Check your email',
+      detail: 'Please confirm your email address to complete registration.',
+      life: 10000,
     })
     return
   }
