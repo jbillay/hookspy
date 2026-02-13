@@ -20,13 +20,12 @@ vi.mock('../../../api/_lib/cors.js', () => ({
   setCorsHeaders: vi.fn(),
 }))
 
-const { default: handler, config } =
-  await import('../../../api/hook/[...slug].js')
+const { default: handler, config } = await import('../../../api/hook/[slug].js')
 
 function createMockReq(overrides = {}) {
   return {
     method: 'POST',
-    query: { slug: ['test-slug'] },
+    query: { slug: 'test-slug' },
     headers: {
       'content-type': 'application/json',
       'x-custom': 'value1',
@@ -456,7 +455,7 @@ describe('webhook receiver - api/hook/[slug]', () => {
   })
 
   describe('sub-path parsing', () => {
-    it('handles slug with sub-path segments', async () => {
+    it('reads sub-path from _subpath query param (set by vercel.json rewrite)', async () => {
       const respondedLog = {
         id: 'log-1',
         status: 'responded',
@@ -467,31 +466,8 @@ describe('webhook receiver - api/hook/[slug]', () => {
       setupSupabaseMocks({ pollResults: [respondedLog] })
 
       const req = createMockReq({
-        query: { slug: ['test-slug', 'stripe', 'events'] },
-        url: '/api/hook/test-slug/stripe/events',
-      })
-      const res = createMockRes()
-
-      const promise = handler(req, res)
-      await vi.runAllTimersAsync()
-      await promise
-
-      // Should look up by first segment only
-      expect(res.statusCode).toBe(200)
-    })
-
-    it('works with single slug segment (backward compat)', async () => {
-      const respondedLog = {
-        id: 'log-1',
-        status: 'responded',
-        response_status: 200,
-        response_headers: {},
-        response_body: 'ok',
-      }
-      setupSupabaseMocks({ pollResults: [respondedLog] })
-
-      const req = createMockReq({
-        query: { slug: ['test-slug'] },
+        query: { slug: 'test-slug', _subpath: '/stripe/events' },
+        url: '/api/hook/test-slug?_subpath=/stripe/events',
       })
       const res = createMockRes()
 
@@ -502,7 +478,7 @@ describe('webhook receiver - api/hook/[slug]', () => {
       expect(res.statusCode).toBe(200)
     })
 
-    it('falls back to req.query.slug when URL has no /api/hook/ prefix', async () => {
+    it('works with no sub-path (single slug segment)', async () => {
       const respondedLog = {
         id: 'log-1',
         status: 'responded',
@@ -514,7 +490,6 @@ describe('webhook receiver - api/hook/[slug]', () => {
 
       const req = createMockReq({
         query: { slug: 'test-slug' },
-        url: '',
       })
       const res = createMockRes()
 

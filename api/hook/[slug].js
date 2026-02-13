@@ -68,17 +68,11 @@ export default async function handler(req, res) {
   if (handleCors(req, res)) return
   setCorsHeaders(res)
 
-  // Parse slug and sub-path from req.url to avoid relying on req.query.slug
-  // which may be undefined in prebuilt deployments.
-  // req.url example: /api/hook/c4572dc1/stripe/events?q=test
-  const urlPath = (req.url || '').split('?')[0]
-  const hookPrefix = '/api/hook/'
-  const afterHook = urlPath.startsWith(hookPrefix)
-    ? urlPath.slice(hookPrefix.length)
-    : ''
-  const segments = afterHook.split('/').filter(Boolean)
-  const slug = segments[0] || req.query.slug
-  const subPath = segments.length > 1 ? '/' + segments.slice(1).join('/') : null
+  // Parse slug from req.query (set by Vercel filesystem routing for [slug].js)
+  // For sub-paths like /api/hook/:slug/extra/path, a vercel.json rewrite passes
+  // the sub-path as ?_subpath=/:subpath to this handler.
+  const slug = req.query.slug
+  const subPath = req.query._subpath || null
 
   // Read raw body with size limit
   let body

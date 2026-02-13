@@ -6,6 +6,10 @@
   },
   "rewrites": [
     {
+      "source": "/api/hook/:slug/:subpath(.*)",
+      "destination": "/api/hook/:slug?_subpath=/:subpath"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
