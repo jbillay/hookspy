@@ -78,8 +78,7 @@ export default async function handler(req, res) {
     : ''
   const segments = afterHook.split('/').filter(Boolean)
   const slug = segments[0] || req.query.slug
-  const subPath =
-    segments.length > 1 ? '/' + segments.slice(1).join('/') : null
+  const subPath = segments.length > 1 ? '/' + segments.slice(1).join('/') : null
 
   // Read raw body with size limit
   let body
