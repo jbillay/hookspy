@@ -19,7 +19,7 @@ const router = useRouter()
 const toast = useToast()
 
 const webhookUrl = computed(
-  () => `${window.location.origin}/hook/${props.endpoint.slug}`,
+  () => `${window.location.origin}/api/hook/${props.endpoint.slug}`,
 )
 
 const targetSummary = computed(

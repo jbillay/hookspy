@@ -208,7 +208,15 @@ export const useLogsStore = defineStore('logs', () => {
         (payload) => {
           totalCount.value++
           if (currentPage.value === 1 && matchesFilters(payload.new)) {
-            logs.value.unshift(payload.new)
+            const endpointsStore = useEndpointsStore()
+            const ep = endpointsStore.endpoints.find(
+              (e) => e.id === payload.new.endpoint_id,
+            )
+            logs.value.unshift({
+              ...payload.new,
+              endpoint_name: ep?.name || 'Unknown',
+              endpoint_slug: ep?.slug,
+            })
           }
         },
       )

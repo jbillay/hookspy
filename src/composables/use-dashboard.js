@@ -89,7 +89,15 @@ export function useDashboard() {
           filter: filterStr,
         },
         (payload) => {
-          recentLogs.value = [payload.new, ...recentLogs.value].slice(0, 10)
+          const ep = endpointsStore.endpoints.find(
+            (e) => e.id === payload.new.endpoint_id,
+          )
+          const enriched = {
+            ...payload.new,
+            endpoint_name: ep?.name || 'Unknown',
+            endpoint_slug: ep?.slug,
+          }
+          recentLogs.value = [enriched, ...recentLogs.value].slice(0, 10)
           requestCount24h.value++
         },
       )
