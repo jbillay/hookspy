@@ -1,9 +1,6 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import Card from 'primevue/card'
-import Tag from 'primevue/tag'
-import Button from 'primevue/button'
 import ToggleSwitch from 'primevue/toggleswitch'
 import { useToast } from 'primevue/usetoast'
 
@@ -47,60 +44,56 @@ async function copyUrl() {
 function goToEndpoint() {
   router.push(`/endpoints/${props.endpoint.id}`)
 }
-
-function goToLogs() {
-  router.push(`/endpoints/${props.endpoint.id}`)
-}
 </script>
 
 <template>
-  <Card class="mb-3">
-    <template #content>
-      <div class="flex items-center justify-between mb-2">
-        <a
-          href="#"
-          class="text-sm font-semibold text-surface-700 hover:text-primary no-underline"
-          @click.prevent="goToEndpoint"
-        >
+  <div
+    class="card-surface p-4 transition-all duration-200 hover:shadow-sm cursor-pointer"
+    @click="goToEndpoint"
+  >
+    <!-- Top row: name + toggle -->
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2 min-w-0">
+        <span
+          :class="[
+            'status-dot flex-shrink-0',
+            endpoint.is_active ? 'status-dot-active' : 'status-dot-inactive',
+          ]"
+        />
+        <span class="text-sm font-semibold text-neutral-900 truncate">
           {{ endpoint.name }}
-        </a>
-        <div class="flex items-center gap-2">
-          <Tag
-            :value="endpoint.is_active ? 'Active' : 'Inactive'"
-            :severity="endpoint.is_active ? 'success' : 'danger'"
-            class="text-xs"
-          />
-          <ToggleSwitch
-            :model-value="endpoint.is_active"
-            @update:model-value="emit('toggle')"
-          />
-        </div>
+        </span>
       </div>
+      <ToggleSwitch
+        :model-value="endpoint.is_active"
+        @click.stop
+        @update:model-value="emit('toggle')"
+      />
+    </div>
 
-      <div class="flex items-center gap-1 mb-2">
-        <code class="text-xs text-surface-500 truncate flex-1">{{
-          webhookUrl
-        }}</code>
-        <Button
-          icon="pi pi-copy"
-          severity="secondary"
-          text
-          size="small"
-          @click="copyUrl"
-        />
-      </div>
+    <!-- Webhook URL -->
+    <div
+      class="flex items-center gap-2 bg-neutral-50 rounded-lg px-3 py-2 mb-3"
+      @click.stop
+    >
+      <code class="text-xs text-neutral-600 font-code truncate flex-1">{{
+        webhookUrl
+      }}</code>
+      <button
+        class="flex-shrink-0 p-1 text-neutral-400 hover:text-neutral-600 transition-colors bg-transparent border-0 cursor-pointer"
+        title="Copy URL"
+        @click.stop="copyUrl"
+      >
+        <i class="pi pi-copy text-sm" />
+      </button>
+    </div>
 
-      <div class="flex items-center justify-between">
-        <span class="text-xs text-surface-400">{{ targetSummary }}</span>
-        <Button
-          label="View Logs"
-          icon="pi pi-list"
-          severity="secondary"
-          text
-          size="small"
-          @click="goToLogs"
-        />
-      </div>
-    </template>
-  </Card>
+    <!-- Bottom: target + arrow -->
+    <div class="flex items-center justify-between">
+      <span class="text-xs text-neutral-400 font-code truncate">{{
+        targetSummary
+      }}</span>
+      <i class="pi pi-arrow-right text-xs text-neutral-300" />
+    </div>
+  </div>
 </template>

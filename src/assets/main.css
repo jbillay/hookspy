@@ -1,3 +1,195 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  /* Brand */
+  --hs-brand: #0d9488;
+  --hs-brand-hover: #14b8a6;
+  --hs-brand-light: #ccfbf1;
+  --hs-brand-subtle: #f0fdfa;
+
+  /* Backgrounds */
+  --hs-bg-page: #fafafa;
+  --hs-bg-surface: #ffffff;
+
+  /* Text */
+  --hs-text-primary: #0a0a0a;
+  --hs-text-secondary: #525252;
+  --hs-text-muted: #a3a3a3;
+
+  /* Borders */
+  --hs-border: #e5e5e5;
+  --hs-border-strong: #d4d4d4;
+
+  /* Status */
+  --hs-success: #16a34a;
+  --hs-error: #dc2626;
+  --hs-warning: #d97706;
+  --hs-info: #2563eb;
+
+  /* Method colors */
+  --hs-method-get: #2563eb;
+  --hs-method-post: #16a34a;
+  --hs-method-put: #d97706;
+  --hs-method-delete: #dc2626;
+  --hs-method-patch: #7c3aed;
+}
+
+body {
+  font-family:
+    'Plus Jakarta Sans',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background-color: var(--hs-bg-page);
+  color: var(--hs-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Card surfaces */
+@layer components {
+  .card-surface {
+    @apply bg-white border border-neutral-200 rounded-xl;
+  }
+
+  .card-surface-hover {
+    @apply card-surface transition-all duration-200;
+  }
+
+  .card-surface-hover:hover {
+    @apply shadow-md -translate-y-0.5;
+  }
+
+  /* Method badges */
+  .badge-method {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold tracking-wide font-mono;
+  }
+
+  .badge-method-get {
+    background-color: #eff6ff;
+    color: var(--hs-method-get);
+  }
+
+  .badge-method-post {
+    background-color: #f0fdf4;
+    color: var(--hs-method-post);
+  }
+
+  .badge-method-put {
+    background-color: #fffbeb;
+    color: var(--hs-method-put);
+  }
+
+  .badge-method-delete {
+    background-color: #fef2f2;
+    color: var(--hs-method-delete);
+  }
+
+  .badge-method-patch {
+    background-color: #f5f3ff;
+    color: var(--hs-method-patch);
+  }
+
+  /* Status dots */
+  .status-dot {
+    @apply inline-block w-2 h-2 rounded-full;
+  }
+
+  .status-dot-active {
+    @apply status-dot bg-green-500;
+  }
+
+  .status-dot-inactive {
+    @apply status-dot bg-neutral-300;
+  }
+
+  .status-dot-error {
+    @apply status-dot bg-red-500;
+  }
+
+  .status-dot-pending {
+    @apply status-dot bg-blue-500;
+  }
+
+  /* Animated pulse dot */
+  .status-dot-pulse {
+    @apply relative;
+  }
+
+  .status-dot-pulse::after {
+    content: '';
+    @apply absolute inset-0 rounded-full;
+    animation: pulse-ring 2s ease-out infinite;
+  }
+
+  .status-dot-pulse.status-dot-active::after {
+    background-color: #16a34a;
+  }
+
+  /* Page layout */
+  .page-container {
+    @apply max-w-7xl mx-auto px-6 py-8;
+  }
+
+  .page-header {
+    @apply mb-8;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-neutral-900 tracking-tight;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-neutral-500 mt-1;
+  }
+
+  /* Section headers */
+  .section-header {
+    @apply flex items-center justify-between mb-4;
+  }
+
+  .section-title {
+    @apply text-lg font-semibold text-neutral-800;
+  }
+
+  /* Code / mono text */
+  .font-code {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  /* Input focus override for teal */
+  .p-inputtext:focus,
+  .p-textarea:focus {
+    border-color: var(--hs-brand) !important;
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15) !important;
+  }
+
+  /* Button primary override */
+  .btn-brand {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white transition-all duration-200;
+    background-color: var(--hs-brand);
+  }
+
+  .btn-brand:hover {
+    background-color: var(--hs-brand-hover);
+    @apply shadow-md;
+  }
+
+  .btn-brand:active {
+    transform: scale(0.98);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.5);
+  }
+}

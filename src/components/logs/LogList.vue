@@ -3,7 +3,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import Tag from 'primevue/tag'
 import Paginator from 'primevue/paginator'
 import ProgressSpinner from 'primevue/progressspinner'
 import LogDetail from './LogDetail.vue'
@@ -107,49 +106,29 @@ onUnmounted(() => {
   store.stopSubscription()
 })
 
-function statusSeverity(status) {
+function statusConfig(status) {
   const map = {
-    pending: 'info',
-    forwarding: 'info',
-    responded: 'success',
-    timeout: 'warn',
-    error: 'danger',
+    pending: { dot: 'status-dot-pending', label: 'Pending' },
+    forwarding: { dot: 'status-dot-pending', label: 'Forwarding' },
+    responded: { dot: 'status-dot-active', label: 'OK' },
+    timeout: { dot: 'status-dot bg-amber-500', label: 'Timeout' },
+    error: { dot: 'status-dot-error', label: 'Error' },
   }
-  return map[status] || 'secondary'
+  return map[status] || { dot: 'status-dot-inactive', label: status }
 }
 
-function statusLabel(status) {
-  const map = {
-    pending: 'Pending',
-    forwarding: 'Forwarding...',
-    responded: 'Responded',
-    timeout: 'Timeout',
-    error: 'Error',
-  }
-  return map[status] || status
-}
-
-function methodSeverity(method) {
-  const map = {
-    GET: 'info',
-    POST: 'success',
-    PUT: 'warn',
-    PATCH: 'warn',
-    DELETE: 'danger',
-    HEAD: 'secondary',
-    OPTIONS: 'secondary',
-  }
-  return map[method?.toUpperCase()] || 'secondary'
+function methodBadgeClass(method) {
+  return `badge-method badge-method-${method?.toLowerCase() || 'get'}`
 }
 
 function formatDuration(ms) {
-  if (ms == null) return '—'
+  if (ms == null) return '--'
   if (ms < 1000) return `${ms}ms`
   return `${(ms / 1000).toFixed(1)}s`
 }
 
 function formatTime(ts) {
-  if (!ts) return '—'
+  if (!ts) return '--'
   return new Date(ts).toLocaleTimeString()
 }
 
@@ -168,7 +147,7 @@ function onPageChange(event) {
 
     <div
       v-if="store.loading && store.logs.length === 0"
-      class="flex justify-center py-8"
+      class="flex justify-center py-12"
     >
       <ProgressSpinner />
     </div>
@@ -177,13 +156,18 @@ function onPageChange(event) {
       v-else-if="
         !store.loading && store.logs.length === 0 && store.hasActiveFilters
       "
-      class="text-center py-8 text-surface-400"
+      class="text-center py-12"
     >
-      <i class="pi pi-filter-slash text-4xl mb-2 block"></i>
-      <p>No logs match your filters</p>
+      <div
+        class="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center bg-neutral-100"
+      >
+        <i class="pi pi-filter-slash text-xl text-neutral-400" />
+      </div>
+      <p class="text-sm text-neutral-500">No logs match your filters</p>
       <a
         href="#"
-        class="text-primary text-sm mt-1 inline-block"
+        class="text-sm mt-2 inline-block font-medium no-underline"
+        style="color: var(--hs-brand)"
         @click.prevent="clearFilters"
         >Clear filters</a
       >
@@ -191,101 +175,101 @@ function onPageChange(event) {
 
     <div
       v-else-if="!store.loading && store.logs.length === 0"
-      class="text-center py-8 text-surface-400"
+      class="text-center py-12"
     >
-      <i class="pi pi-inbox text-4xl mb-2 block"></i>
-      <p>No webhook logs yet</p>
+      <div
+        class="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center bg-neutral-100"
+      >
+        <i class="pi pi-inbox text-xl text-neutral-400" />
+      </div>
+      <p class="text-sm text-neutral-500">No webhook logs yet</p>
     </div>
 
     <template v-else>
-      <DataTable
-        v-model:expanded-rows="expandedRows"
-        :value="store.logs"
-        data-key="id"
-        :row-hover="true"
-        class="log-table"
-      >
-        <Column expander style="width: 3rem" />
-        <Column field="received_at" header="Time" style="width: 8rem">
-          <template #body="{ data }">
-            <span class="text-sm">{{ formatTime(data.received_at) }}</span>
-          </template>
-        </Column>
-        <Column
-          v-if="showEndpointColumn"
-          field="endpoint_name"
-          header="Endpoint"
-          style="width: 10rem"
+      <div class="card-surface overflow-hidden">
+        <DataTable
+          v-model:expanded-rows="expandedRows"
+          :value="store.logs"
+          data-key="id"
+          :row-hover="true"
+          class="log-table"
         >
-          <template #body="{ data }">
-            <span class="text-sm font-medium">{{ data.endpoint_name }}</span>
+          <Column expander style="width: 3rem" />
+          <Column field="received_at" header="Time" style="width: 8rem">
+            <template #body="{ data }">
+              <span class="text-sm text-neutral-600">{{
+                formatTime(data.received_at)
+              }}</span>
+            </template>
+          </Column>
+          <Column
+            v-if="showEndpointColumn"
+            field="endpoint_name"
+            header="Endpoint"
+            style="width: 10rem"
+          >
+            <template #body="{ data }">
+              <span class="text-sm font-medium text-neutral-800">{{
+                data.endpoint_name
+              }}</span>
+            </template>
+          </Column>
+          <Column field="request_method" header="Method" style="width: 6rem">
+            <template #body="{ data }">
+              <span :class="methodBadgeClass(data.request_method)">
+                {{ data.request_method }}
+              </span>
+            </template>
+          </Column>
+          <Column field="request_url" header="URL">
+            <template #body="{ data }">
+              <span
+                class="text-sm font-code text-neutral-600 truncate block max-w-xs"
+                >{{ data.request_url }}</span
+              >
+            </template>
+          </Column>
+          <Column field="status" header="Status" style="width: 10rem">
+            <template #body="{ data }">
+              <div class="flex items-center gap-1.5">
+                <span
+                  :class="[
+                    statusConfig(data.status).dot,
+                    data.status === 'forwarding' ? 'animate-pulse' : '',
+                  ]"
+                />
+                <span class="text-sm text-neutral-600">{{
+                  statusConfig(data.status).label
+                }}</span>
+                <i
+                  v-if="data.replayed_from"
+                  class="pi pi-replay text-xs text-blue-500"
+                  title="Replayed webhook"
+                />
+              </div>
+            </template>
+          </Column>
+          <Column field="duration_ms" header="Duration" style="width: 6rem">
+            <template #body="{ data }">
+              <span class="text-sm text-neutral-500 font-code">{{
+                formatDuration(data.duration_ms)
+              }}</span>
+            </template>
+          </Column>
+          <template #expansion="slotProps">
+            <LogDetail :log="slotProps.data" />
           </template>
-        </Column>
-        <Column field="request_method" header="Method" style="width: 6rem">
-          <template #body="{ data }">
-            <Tag
-              :value="data.request_method"
-              :severity="methodSeverity(data.request_method)"
-            />
-          </template>
-        </Column>
-        <Column field="request_url" header="URL">
-          <template #body="{ data }">
-            <span class="text-sm font-mono truncate block max-w-xs">{{
-              data.request_url
-            }}</span>
-          </template>
-        </Column>
-        <Column field="status" header="Status" style="width: 10rem">
-          <template #body="{ data }">
-            <div class="flex items-center gap-1">
-              <Tag
-                :value="statusLabel(data.status)"
-                :severity="statusSeverity(data.status)"
-                :class="{ 'status-pulse': data.status === 'forwarding' }"
-              />
-              <i
-                v-if="data.replayed_from"
-                class="pi pi-replay text-blue-500"
-                title="Replayed webhook"
-              />
-            </div>
-          </template>
-        </Column>
-        <Column field="duration_ms" header="Duration" style="width: 6rem">
-          <template #body="{ data }">
-            <span class="text-sm">{{ formatDuration(data.duration_ms) }}</span>
-          </template>
-        </Column>
-        <template #expansion="slotProps">
-          <LogDetail :log="slotProps.data" />
-        </template>
-      </DataTable>
+        </DataTable>
+      </div>
 
       <Paginator
         v-if="store.totalCount > store.pageSize"
         :rows="store.pageSize"
         :total-records="store.totalCount"
         :first="(store.currentPage - 1) * store.pageSize"
-        class="mt-2"
+        class="mt-4"
         @page="onPageChange"
       />
     </template>
   </div>
 </template>
-
-<style>
-@keyframes pulse-status {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.status-pulse {
-  animation: pulse-status 1.5s ease-in-out infinite;
-}
-</style>

@@ -1,6 +1,4 @@
 <script setup>
-import Card from 'primevue/card'
-
 defineProps({
   label: {
     type: String,
@@ -20,33 +18,54 @@ defineProps({
   },
 })
 
-const severityClasses = {
-  info: 'text-blue-600',
-  success: 'text-green-600',
-  warn: 'text-orange-500',
-  danger: 'text-red-600',
+const iconStyles = {
+  success: {
+    bg: 'bg-green-50',
+    text: 'text-green-600',
+  },
+  warn: {
+    bg: 'bg-amber-50',
+    text: 'text-amber-600',
+  },
+  danger: {
+    bg: 'bg-red-50',
+    text: 'text-red-600',
+  },
+  info: {
+    bg: 'bg-blue-50',
+    text: 'text-blue-600',
+  },
+}
+
+const defaultStyle = {
+  bg: 'bg-brand-subtle',
+  text: 'text-brand',
 }
 </script>
 
 <template>
-  <Card class="stat-card">
-    <template #content>
-      <div class="flex items-center gap-3">
+  <div class="card-surface p-5 transition-all duration-200 hover:shadow-sm">
+    <div class="flex items-start gap-3">
+      <div
+        v-if="icon"
+        :class="[
+          'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
+          (iconStyles[severity] || defaultStyle).bg,
+        ]"
+      >
         <i
-          v-if="icon"
-          :class="[icon, severityClasses[severity] || 'text-surface-500']"
-          class="text-2xl"
-        ></i>
-        <div>
-          <div
-            class="text-2xl font-bold"
-            :class="severityClasses[severity] || 'text-surface-700'"
-          >
-            {{ value }}
-          </div>
-          <div class="text-sm text-surface-500">{{ label }}</div>
+          :class="[icon, (iconStyles[severity] || defaultStyle).text]"
+          class="text-lg"
+        />
+      </div>
+      <div class="min-w-0">
+        <div class="text-2xl font-bold text-neutral-900 font-display">
+          {{ value }}
+        </div>
+        <div class="text-xs font-medium text-neutral-500 mt-0.5">
+          {{ label }}
         </div>
       </div>
-    </template>
-  </Card>
+    </div>
+  </div>
 </template>

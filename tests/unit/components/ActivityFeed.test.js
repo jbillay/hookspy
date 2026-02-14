@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
-import ProgressSpinner from 'primevue/progressspinner'
 import ActivityFeed from '../../../src/components/dashboard/ActivityFeed.vue'
 
 vi.mock('../../../src/composables/use-dashboard.js', async (importOriginal) => {
@@ -81,7 +80,7 @@ describe('ActivityFeed', () => {
 
   it('shows loading spinner when loading and no logs', () => {
     const wrapper = mountFeed({ logs: [], loading: true })
-    expect(wrapper.findComponent(ProgressSpinner).exists()).toBe(true)
+    expect(wrapper.find('.animate-spin').exists()).toBe(true)
   })
 
   it('does not show empty state when loading', () => {

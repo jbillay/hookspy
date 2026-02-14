@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
-import Card from 'primevue/card'
 import { useToast } from 'primevue/usetoast'
 import { useAuth } from '../composables/use-auth.js'
 
@@ -65,27 +64,60 @@ async function handleRegister() {
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen">
-    <Card class="w-full max-w-md">
-      <template #title>Create an Account</template>
-      <template #content>
-        <form class="flex flex-col gap-4" @submit.prevent="handleRegister">
-          <div class="flex flex-col gap-1">
-            <label for="email">Email</label>
+  <div
+    class="min-h-screen flex items-center justify-center px-4"
+    style="
+      background: linear-gradient(
+        135deg,
+        #f0fdfa 0%,
+        #fafafa 50%,
+        #eff6ff 100%
+      );
+    "
+  >
+    <div class="w-full max-w-sm">
+      <!-- Branding -->
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center gap-2.5 mb-3">
+          <div
+            class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold shadow-sm"
+            style="background-color: var(--hs-brand)"
+          >
+            H
+          </div>
+          <span class="text-2xl font-bold text-neutral-900 font-display"
+            >HookSpy</span
+          >
+        </div>
+        <p class="text-sm text-neutral-500">
+          Create your account to get started
+        </p>
+      </div>
+
+      <!-- Form card -->
+      <div class="card-surface p-8 shadow-sm">
+        <form class="flex flex-col gap-5" @submit.prevent="handleRegister">
+          <div class="flex flex-col gap-1.5">
+            <label for="email" class="text-sm font-medium text-neutral-700"
+              >Email</label
+            >
             <InputText
               id="email"
               v-model="email"
               type="email"
               placeholder="you@example.com"
               :invalid="!!errors.email"
+              class="w-full"
             />
-            <small v-if="errors.email" class="text-red-500">{{
+            <small v-if="errors.email" class="text-red-500 text-xs">{{
               errors.email
             }}</small>
           </div>
 
-          <div class="flex flex-col gap-1">
-            <label for="password">Password</label>
+          <div class="flex flex-col gap-1.5">
+            <label for="password" class="text-sm font-medium text-neutral-700"
+              >Password</label
+            >
             <Password
               id="password"
               v-model="password"
@@ -94,13 +126,17 @@ async function handleRegister() {
               input-class="w-full"
               :invalid="!!errors.password"
             />
-            <small v-if="errors.password" class="text-red-500">{{
+            <small v-if="errors.password" class="text-red-500 text-xs">{{
               errors.password
             }}</small>
           </div>
 
-          <div class="flex flex-col gap-1">
-            <label for="confirmPassword">Confirm Password</label>
+          <div class="flex flex-col gap-1.5">
+            <label
+              for="confirmPassword"
+              class="text-sm font-medium text-neutral-700"
+              >Confirm Password</label
+            >
             <Password
               id="confirmPassword"
               v-model="confirmPassword"
@@ -109,7 +145,7 @@ async function handleRegister() {
               input-class="w-full"
               :invalid="!!errors.confirmPassword"
             />
-            <small v-if="errors.confirmPassword" class="text-red-500">{{
+            <small v-if="errors.confirmPassword" class="text-red-500 text-xs">{{
               errors.confirmPassword
             }}</small>
           </div>
@@ -119,18 +155,21 @@ async function handleRegister() {
             label="Create Account"
             :loading="auth.loading"
             :disabled="auth.loading"
-            class="w-full"
+            class="w-full mt-1"
           />
         </form>
-      </template>
-      <template #footer>
-        <p class="text-center text-sm">
-          Already have an account?
-          <router-link to="/login" class="text-primary font-semibold"
-            >Sign in</router-link
-          >
-        </p>
-      </template>
-    </Card>
+      </div>
+
+      <!-- Footer link -->
+      <p class="text-center text-sm text-neutral-500 mt-6">
+        Already have an account?
+        <router-link
+          to="/login"
+          class="font-semibold no-underline"
+          style="color: var(--hs-brand)"
+          >Sign in</router-link
+        >
+      </p>
+    </div>
   </div>
 </template>

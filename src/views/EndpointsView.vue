@@ -1,7 +1,6 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import Button from 'primevue/button'
 import ProgressSpinner from 'primevue/progressspinner'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
@@ -65,40 +64,53 @@ async function handleToggle(endpoint) {
 </script>
 
 <template>
-  <div class="p-6">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold">Endpoints</h1>
-      <Button
-        label="New Endpoint"
-        icon="pi pi-plus"
-        @click="router.push({ name: 'endpoint-new' })"
-      />
+  <div class="page-container">
+    <!-- Page header -->
+    <div class="page-header flex items-center justify-between">
+      <div>
+        <h1 class="page-title">Endpoints</h1>
+        <p class="page-subtitle">
+          Manage your webhook endpoints and forwarding targets
+        </p>
+      </div>
+      <button class="btn-brand" @click="router.push({ name: 'endpoint-new' })">
+        <i class="pi pi-plus text-sm" />
+        New Endpoint
+      </button>
     </div>
 
+    <!-- Loading -->
     <div
       v-if="store.loading && store.endpoints.length === 0"
-      class="flex justify-center py-12"
+      class="flex justify-center py-16"
     >
       <ProgressSpinner />
     </div>
 
+    <!-- Empty state -->
     <div
       v-else-if="store.endpoints.length === 0"
-      class="flex flex-col items-center justify-center py-16 text-center"
+      class="flex flex-col items-center justify-center py-20 text-center"
     >
-      <i class="pi pi-inbox text-5xl text-surface-400 mb-4" />
-      <h2 class="text-xl font-semibold mb-2">No endpoints yet</h2>
-      <p class="text-surface-500 mb-6">
-        Create your first endpoint to start receiving webhooks.
+      <div
+        class="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center bg-neutral-100"
+      >
+        <i class="pi pi-inbox text-3xl text-neutral-400" />
+      </div>
+      <h2 class="text-lg font-semibold text-neutral-800 mb-2">
+        No endpoints yet
+      </h2>
+      <p class="text-sm text-neutral-500 mb-6 max-w-sm">
+        Create your first endpoint to start receiving and relaying webhooks.
       </p>
-      <Button
-        label="Create your first endpoint"
-        icon="pi pi-plus"
-        @click="router.push({ name: 'endpoint-new' })"
-      />
+      <button class="btn-brand" @click="router.push({ name: 'endpoint-new' })">
+        <i class="pi pi-plus text-sm" />
+        Create your first endpoint
+      </button>
     </div>
 
-    <div v-else class="flex flex-col gap-4">
+    <!-- Endpoint grid -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       <EndpointCard
         v-for="endpoint in store.endpoints"
         :key="endpoint.id"

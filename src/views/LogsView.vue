@@ -3,8 +3,13 @@ import LogList from '../components/logs/LogList.vue'
 </script>
 
 <template>
-  <div class="p-6">
-    <h1 class="text-2xl font-bold mb-4">All Logs</h1>
+  <div class="page-container">
+    <div class="page-header">
+      <h1 class="page-title">Webhook Logs</h1>
+      <p class="page-subtitle">
+        View and inspect all incoming webhook requests
+      </p>
+    </div>
     <LogList />
   </div>
 </template>

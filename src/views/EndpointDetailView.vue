@@ -83,8 +83,22 @@ function handleCancel() {
 </script>
 
 <template>
-  <div class="p-6 max-w-2xl mx-auto">
-    <div v-if="loadingEndpoint" class="flex justify-center py-12">
+  <div class="page-container max-w-2xl">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm mb-6">
+      <router-link
+        to="/endpoints"
+        class="text-neutral-500 hover:text-neutral-700 no-underline transition-colors"
+      >
+        Endpoints
+      </router-link>
+      <i class="pi pi-angle-right text-xs text-neutral-400" />
+      <span class="text-neutral-800 font-medium">
+        {{ mode === 'create' ? 'New Endpoint' : endpoint?.name || '...' }}
+      </span>
+    </nav>
+
+    <div v-if="loadingEndpoint" class="flex justify-center py-16">
       <ProgressSpinner />
     </div>
     <EndpointForm
@@ -102,9 +116,9 @@ function handleCancel() {
 
     <div
       v-if="mode === 'edit' && !loadingEndpoint"
-      class="mt-8 border-t border-surface-200 pt-6"
+      class="mt-10 border-t border-neutral-200 pt-8"
     >
-      <h2 class="text-xl font-bold mb-4">Webhook Logs</h2>
+      <h2 class="section-title mb-4">Webhook Logs</h2>
       <LogList :endpoint-id="route.params.id" />
     </div>
   </div>

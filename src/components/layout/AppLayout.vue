@@ -16,9 +16,11 @@ const showHeader = computed(
 </script>
 
 <template>
-  <div class="min-h-screen">
+  <div class="min-h-screen" style="background-color: var(--hs-bg-page)">
     <AppHeader v-if="showHeader" />
     <RelayWorker v-if="showHeader" />
-    <slot />
+    <main>
+      <slot />
+    </main>
   </div>
 </template>

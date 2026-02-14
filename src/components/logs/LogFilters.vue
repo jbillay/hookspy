@@ -80,8 +80,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-wrap gap-3 items-end mb-4">
+  <div class="card-surface p-4 mb-4 flex flex-wrap gap-3 items-end">
     <div class="flex-1 min-w-48">
+      <label class="text-xs font-medium text-neutral-500 mb-1 block"
+        >Search</label
+      >
       <InputText
         v-model="localSearch"
         placeholder="Search logs..."
@@ -90,43 +93,57 @@ onUnmounted(() => {
       />
     </div>
 
-    <MultiSelect
-      v-model="localMethod"
-      :options="methodOptions"
-      placeholder="Method"
-      display="chip"
-      class="w-48"
-      @change="onMethodChange"
-    />
-
-    <MultiSelect
-      v-model="localStatus"
-      :options="statusOptions"
-      placeholder="Status"
-      display="chip"
-      class="w-48"
-      @change="onStatusChange"
-    />
-
-    <div class="flex items-center gap-1">
-      <DatePicker
-        v-model="dateRange"
-        selection-mode="range"
-        show-time
-        hour-format="24"
-        placeholder="Date range"
-        date-format="yy-mm-dd"
-        class="w-64"
-        @date-select="onDateChange"
+    <div>
+      <label class="text-xs font-medium text-neutral-500 mb-1 block"
+        >Method</label
+      >
+      <MultiSelect
+        v-model="localMethod"
+        :options="methodOptions"
+        placeholder="All methods"
+        display="chip"
+        class="w-48"
+        @change="onMethodChange"
       />
-      <Button
-        v-if="dateRange"
-        icon="pi pi-times"
-        severity="secondary"
-        text
-        size="small"
-        @click="clearDateRange"
+    </div>
+
+    <div>
+      <label class="text-xs font-medium text-neutral-500 mb-1 block"
+        >Status</label
+      >
+      <MultiSelect
+        v-model="localStatus"
+        :options="statusOptions"
+        placeholder="All statuses"
+        display="chip"
+        class="w-48"
+        @change="onStatusChange"
       />
+    </div>
+
+    <div>
+      <label class="text-xs font-medium text-neutral-500 mb-1 block"
+        >Date range</label
+      >
+      <div class="flex items-center gap-1">
+        <DatePicker
+          v-model="dateRange"
+          selection-mode="range"
+          show-time
+          hour-format="24"
+          placeholder="Select dates"
+          date-format="yy-mm-dd"
+          class="w-64"
+          @date-select="onDateChange"
+        />
+        <button
+          v-if="dateRange"
+          class="p-1.5 text-neutral-400 hover:text-neutral-600 bg-transparent border-0 cursor-pointer transition-colors"
+          @click="clearDateRange"
+        >
+          <i class="pi pi-times text-xs" />
+        </button>
+      </div>
     </div>
 
     <Button
@@ -136,10 +153,11 @@ onUnmounted(() => {
         localStatus.length > 0 ||
         dateRange
       "
-      label="Clear filters"
+      label="Clear"
       icon="pi pi-filter-slash"
       severity="secondary"
       text
+      size="small"
       @click="emit('clear')"
     />
   </div>
