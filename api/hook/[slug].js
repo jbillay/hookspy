@@ -66,7 +66,7 @@ function sleep(ms) {
 export default async function handler(req, res) {
   // Handle CORS
   if (handleCors(req, res)) return
-  setCorsHeaders(res)
+  setCorsHeaders(req, res)
 
   // Parse slug from req.query (set by Vercel filesystem routing for [slug].js)
   // For sub-paths like /api/hook/:slug/extra/path, a vercel.json rewrite passes

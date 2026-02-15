@@ -1,7 +1,34 @@
-const allowedOrigin = process.env.VITE_APP_URL || '*'
+const ALLOWED_ORIGINS = getAllowedOrigins()
 
-export function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Origin', allowedOrigin)
+function getAllowedOrigins() {
+  const appUrl = process.env.VITE_APP_URL
+  if (!appUrl) {
+    console.warn(
+      'VITE_APP_URL is not set — CORS will reject all cross-origin requests',
+    )
+    return []
+  }
+  // Support comma-separated origins for multi-environment setups
+  return appUrl
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean)
+}
+
+function getOrigin(req) {
+  const origin = req.headers?.origin
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    return origin
+  }
+  return null
+}
+
+export function setCorsHeaders(req, res) {
+  const origin = getOrigin(req)
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+    res.setHeader('Vary', 'Origin')
+  }
   res.setHeader(
     'Access-Control-Allow-Methods',
     'GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS',
@@ -11,7 +38,7 @@ export function setCorsHeaders(res) {
 }
 
 export function handleCors(req, res) {
-  setCorsHeaders(res)
+  setCorsHeaders(req, res)
   if (req.method === 'OPTIONS') {
     res.status(200).end()
     return true

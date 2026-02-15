@@ -4,7 +4,7 @@ import { handleCors, setCorsHeaders } from '../_lib/cors.js'
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return
-  setCorsHeaders(res)
+  setCorsHeaders(req, res)
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -64,9 +64,13 @@ export default async function handler(req, res) {
   }
 
   if (q) {
-    query = query.or(
-      `request_body.ilike.%${q}%,request_url.ilike.%${q}%,response_body.ilike.%${q}%,error_message.ilike.%${q}%`,
-    )
+    // Sanitize: strip PostgREST operators to prevent query injection
+    const sanitized = q.replace(/[,.*()\\]/g, '').trim()
+    if (sanitized) {
+      query = query.or(
+        `request_body.ilike.%${sanitized}%,request_url.ilike.%${sanitized}%,response_body.ilike.%${sanitized}%,error_message.ilike.%${sanitized}%`,
+      )
+    }
   }
 
   const { data, error, count } = await query

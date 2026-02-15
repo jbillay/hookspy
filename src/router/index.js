@@ -60,8 +60,8 @@ router.beforeEach(async (to) => {
     await authStore.initAuth()
   }
 
-  if (to.name === 'home') {
-    return authStore.isAuthenticated ? { name: 'dashboard' } : { name: 'login' }
+  if (to.name === 'home' && authStore.isAuthenticated) {
+    return { name: 'dashboard' }
   }
 
   if (!PUBLIC_ROUTES.includes(to.name) && !authStore.isAuthenticated) {

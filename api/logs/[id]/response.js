@@ -5,7 +5,7 @@ import { handleCors, setCorsHeaders } from '../../_lib/cors.js'
 export default async function handler(req, res) {
   // Handle CORS
   if (handleCors(req, res)) return
-  setCorsHeaders(res)
+  setCorsHeaders(req, res)
 
   // Only allow POST
   if (req.method !== 'POST') {

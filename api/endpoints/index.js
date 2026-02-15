@@ -1,42 +1,16 @@
 import { supabase } from '../_lib/supabase.js'
 import { verifyAuth } from '../_lib/auth.js'
 import { handleCors, setCorsHeaders } from '../_lib/cors.js'
+import { validateEndpoint } from '../_lib/validation.js'
 
 function generateSlug() {
   return crypto.randomUUID().replace(/-/g, '').slice(0, 8)
 }
 
-function validateEndpoint(body) {
-  if (!body.name || !body.name.trim()) {
-    return 'Name is required'
-  }
-  if (
-    body.target_port !== undefined &&
-    (body.target_port < 1 || body.target_port > 65535)
-  ) {
-    return 'Port must be between 1 and 65535'
-  }
-  if (
-    body.timeout_seconds !== undefined &&
-    (body.timeout_seconds < 1 || body.timeout_seconds > 55)
-  ) {
-    return 'Timeout must be between 1 and 55 seconds'
-  }
-  if (body.custom_headers) {
-    const keys = Object.keys(body.custom_headers)
-    for (const key of keys) {
-      if (!key.trim()) {
-        return 'Header name cannot be empty'
-      }
-    }
-  }
-  return null
-}
-
 export default async function handler(req, res) {
   if (handleCors(req, res)) return
 
-  setCorsHeaders(res)
+  setCorsHeaders(req, res)
 
   const { user, error: authError } = await verifyAuth(req)
   if (authError) {
