@@ -117,10 +117,7 @@ function toggleDarkMode() {
             title="Toggle dark mode"
             @click="toggleDarkMode"
           >
-            <i
-              :class="isDark ? 'pi pi-sun' : 'pi pi-moon'"
-              class="text-sm"
-            />
+            <i :class="isDark ? 'pi pi-sun' : 'pi pi-moon'" class="text-sm" />
           </button>
           <router-link
             to="/login"
@@ -201,11 +198,7 @@ function toggleDarkMode() {
                         ? 'text-white shadow-sm'
                         : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
                     "
-                    :style="
-                      isLogin
-                        ? 'background-color: var(--hs-brand)'
-                        : ''
-                    "
+                    :style="isLogin ? 'background-color: var(--hs-brand)' : ''"
                     @click="isLogin = true"
                   >
                     Sign in
@@ -217,11 +210,7 @@ function toggleDarkMode() {
                         ? 'text-white shadow-sm'
                         : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
                     "
-                    :style="
-                      !isLogin
-                        ? 'background-color: var(--hs-brand)'
-                        : ''
-                    "
+                    :style="!isLogin ? 'background-color: var(--hs-brand)' : ''"
                     @click="isLogin = false"
                   >
                     Create account
@@ -839,25 +828,13 @@ function toggleDarkMode() {
   padding-bottom: 5rem;
   background:
     url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='1' fill='%23d4d4d4' fill-opacity='0.3'/%3E%3C/svg%3E"),
-    linear-gradient(
-      170deg,
-      #f0fdfa 0%,
-      #ffffff 40%,
-      #ffffff 60%,
-      #eff6ff 100%
-    );
+    linear-gradient(170deg, #f0fdfa 0%, #ffffff 40%, #ffffff 60%, #eff6ff 100%);
 }
 
 :global(.dark-mode) .landing-hero {
   background:
     url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='1' fill='%23525252' fill-opacity='0.3'/%3E%3C/svg%3E"),
-    linear-gradient(
-      170deg,
-      #0a2420 0%,
-      #0a0a0a 40%,
-      #0a0a0a 60%,
-      #0c1525 100%
-    );
+    linear-gradient(170deg, #0a2420 0%, #0a0a0a 40%, #0a0a0a 60%, #0c1525 100%);
 }
 
 @media (min-width: 640px) {

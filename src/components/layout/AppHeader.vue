@@ -173,10 +173,7 @@ function userInitial() {
               class="p-1.5 text-neutral-500 hover:text-neutral-700 transition-colors bg-transparent border-0 cursor-pointer"
               @click="toggleDarkMode"
             >
-              <i
-                :class="isDark ? 'pi pi-sun' : 'pi pi-moon'"
-                class="text-sm"
-              />
+              <i :class="isDark ? 'pi pi-sun' : 'pi pi-moon'" class="text-sm" />
             </button>
             <button
               class="text-sm text-neutral-500 hover:text-neutral-700 bg-transparent border-0 cursor-pointer"

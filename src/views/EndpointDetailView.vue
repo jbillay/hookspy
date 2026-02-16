@@ -135,10 +135,7 @@ function handleCancel() {
           <h2 class="text-lg font-semibold text-neutral-900">
             {{ endpoint.name }}
           </h2>
-          <button
-            class="btn-brand text-sm"
-            @click="editDialogVisible = true"
-          >
+          <button class="btn-brand text-sm" @click="editDialogVisible = true">
             <i class="pi pi-pencil text-xs" />
             Edit
           </button>

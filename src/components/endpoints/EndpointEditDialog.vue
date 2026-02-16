@@ -111,7 +111,9 @@ function close() {
       </div>
 
       <div class="flex flex-col gap-1.5">
-        <label for="edit-target_url" class="text-sm font-medium text-neutral-700"
+        <label
+          for="edit-target_url"
+          class="text-sm font-medium text-neutral-700"
           >Target URL</label
         >
         <InputText
