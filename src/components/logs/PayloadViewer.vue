@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import DOMPurify from 'dompurify'
 import Button from 'primevue/button'
 
 const props = defineProps({
@@ -46,7 +47,7 @@ const prettyJson = computed(() => {
 })
 
 function highlightJson(str) {
-  return str
+  const highlighted = str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -58,6 +59,11 @@ function highlightJson(str) {
     .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
     .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
     .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>')
+
+  return DOMPurify.sanitize(highlighted, {
+    ALLOWED_TAGS: ['span'],
+    ALLOWED_ATTR: ['class'],
+  })
 }
 </script>
 
@@ -77,11 +83,13 @@ function highlightJson(str) {
       <div
         class="bg-surface-50 border border-surface-200 rounded p-3 overflow-auto max-h-96 text-sm font-mono"
       >
+        <!-- eslint-disable vue/no-v-html -->
         <pre
           v-if="prettyJson"
           class="whitespace-pre-wrap m-0"
           v-html="highlightJson(prettyJson)"
         ></pre>
+        <!-- eslint-enable vue/no-v-html -->
         <pre v-else class="whitespace-pre-wrap m-0">{{ displayContent }}</pre>
       </div>
       <div v-if="isTruncated" class="mt-2">
