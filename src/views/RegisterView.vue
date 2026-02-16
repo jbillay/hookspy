@@ -65,7 +65,7 @@ async function handleRegister() {
 
 <template>
   <div
-    class="min-h-screen flex items-center justify-center px-4"
+    class="auth-page-bg min-h-screen flex items-center justify-center px-4"
     style="
       background: linear-gradient(
         135deg,

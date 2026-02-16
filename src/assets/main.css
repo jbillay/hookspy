@@ -293,6 +293,102 @@ body {
   color: #a78bfa;
 }
 
+/* Icon background colors - use CSS vars so dark mode can override */
+:root {
+  --hs-icon-bg-blue: #eff6ff;
+  --hs-icon-bg-green: #f0fdf4;
+  --hs-icon-bg-purple: #f5f3ff;
+  --hs-icon-bg-amber: #fffbeb;
+  --hs-icon-bg-red: #fef2f2;
+}
+
+.dark-mode {
+  --hs-icon-bg-blue: #172554;
+  --hs-icon-bg-green: #052e16;
+  --hs-icon-bg-purple: #2e1065;
+  --hs-icon-bg-amber: #422006;
+  --hs-icon-bg-red: #450a0a;
+}
+
+/* Dark mode: nav link colors */
+.dark-mode .landing-nav .text-neutral-500:hover {
+  color: #fafafa;
+}
+
+/* Dark mode: secondary button (outline) */
+.dark-mode .btn-outline {
+  background-color: transparent;
+  border-color: #404040;
+  color: #d4d4d4;
+}
+
+.dark-mode .btn-outline:hover {
+  border-color: #525252;
+  color: #fafafa;
+}
+
+/* Dark mode: auth card form elements */
+.dark-mode .auth-toggle-track {
+  background-color: #0a0a0a;
+  border-color: #333333;
+}
+
+.dark-mode .auth-toggle-btn {
+  color: #737373;
+}
+
+.dark-mode .auth-toggle-btn:hover {
+  color: #a3a3a3;
+}
+
+/* Dark mode: pricing "coming soon" button */
+.dark-mode button:disabled {
+  border-color: #333333;
+  color: #525252;
+}
+
+/* Dark mode: PrimeVue input overrides */
+.dark-mode .p-inputtext {
+  background-color: #0a0a0a;
+  border-color: #333333;
+  color: #fafafa;
+}
+
+.dark-mode .p-inputtext::placeholder {
+  color: #525252;
+}
+
+.dark-mode .p-inputtext:focus {
+  border-color: var(--hs-brand) !important;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2) !important;
+}
+
+.dark-mode .p-password-panel {
+  background-color: #171717;
+  border-color: #333333;
+}
+
+/* Dark mode: PrimeVue button primary */
+.dark-mode .p-button {
+  background-color: var(--hs-brand);
+  border-color: var(--hs-brand);
+}
+
+.dark-mode .p-button:hover {
+  background-color: var(--hs-brand-hover);
+  border-color: var(--hs-brand-hover);
+}
+
+/* Dark mode: login/register page backgrounds */
+.dark-mode .auth-page-bg {
+  background: linear-gradient(
+    135deg,
+    #0a2420 0%,
+    #0a0a0a 50%,
+    #0c1525 100%
+  ) !important;
+}
+
 @keyframes pulse-ring {
   0% {
     opacity: 0.6;

@@ -174,7 +174,8 @@ function toggleDarkMode() {
               </button>
               <a
                 href="#how-it-works"
-                class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold text-neutral-700 bg-white border-2 border-neutral-300 no-underline transition-all duration-200 hover:border-neutral-400 hover:shadow-sm"
+                class="btn-outline inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold text-neutral-700 border-2 border-neutral-300 no-underline transition-all duration-200 hover:border-neutral-400 hover:shadow-sm"
+                style="background-color: var(--hs-bg-surface)"
               >
                 See how it works
                 <i class="pi pi-arrow-down text-sm" />
@@ -182,83 +183,133 @@ function toggleDarkMode() {
             </div>
           </div>
 
-          <!-- Right: Inline auth form -->
+          <!-- Right: Redesigned auth form -->
           <div class="flex justify-center lg:justify-end">
             <div class="w-full max-w-sm">
-              <div class="card-surface p-8 shadow-sm">
-                <!-- Auth mode toggle -->
-                <div
-                  class="flex rounded-full p-1 mb-6 border border-neutral-200"
-                  style="background-color: var(--hs-bg-page)"
-                >
-                  <button
-                    class="flex-1 py-2.5 text-sm font-semibold rounded-full transition-all duration-200"
-                    :class="
-                      isLogin
-                        ? 'text-white shadow-sm'
-                        : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
-                    "
-                    :style="isLogin ? 'background-color: var(--hs-brand)' : ''"
-                    @click="isLogin = true"
-                  >
-                    Sign in
-                  </button>
-                  <button
-                    class="flex-1 py-2.5 text-sm font-semibold rounded-full transition-all duration-200"
-                    :class="
-                      !isLogin
-                        ? 'text-white shadow-sm'
-                        : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
-                    "
-                    :style="!isLogin ? 'background-color: var(--hs-brand)' : ''"
-                    @click="isLogin = false"
-                  >
-                    Create account
-                  </button>
+              <div class="auth-card card-surface overflow-hidden shadow-lg">
+                <!-- Form header with gradient accent -->
+                <div class="auth-card-header">
+                  <div class="flex items-center gap-3 mb-1">
+                    <div
+                      class="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold"
+                      style="background-color: rgba(255, 255, 255, 0.2)"
+                    >
+                      <i class="pi pi-user text-base" />
+                    </div>
+                    <div>
+                      <h2 class="text-white text-base font-semibold m-0">
+                        {{ isLogin ? 'Welcome back' : 'Get started' }}
+                      </h2>
+                      <p class="text-white/70 text-xs m-0 mt-0.5">
+                        {{
+                          isLogin
+                            ? 'Sign in to your account'
+                            : 'Create your free account'
+                        }}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <form
-                  class="flex flex-col gap-4"
-                  @submit.prevent="handleSubmit"
-                >
-                  <div class="flex flex-col gap-1.5">
-                    <label
-                      for="hero-email"
-                      class="text-sm font-medium text-neutral-700"
-                      >Email</label
+                <div class="p-6 pt-5">
+                  <!-- Auth mode toggle -->
+                  <div
+                    class="auth-toggle-track flex rounded-lg p-1 mb-5 border border-neutral-200"
+                    style="background-color: var(--hs-bg-page)"
+                  >
+                    <button
+                      class="auth-toggle-btn flex-1 py-2 text-sm font-semibold rounded-md transition-all duration-200"
+                      :class="
+                        isLogin
+                          ? 'auth-toggle-active text-white shadow-sm'
+                          : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
+                      "
+                      @click="isLogin = true"
                     >
-                    <InputText
-                      id="hero-email"
-                      v-model="email"
-                      type="email"
-                      placeholder="you@example.com"
-                      class="w-full"
+                      Sign in
+                    </button>
+                    <button
+                      class="auth-toggle-btn flex-1 py-2 text-sm font-semibold rounded-md transition-all duration-200"
+                      :class="
+                        !isLogin
+                          ? 'auth-toggle-active text-white shadow-sm'
+                          : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
+                      "
+                      @click="isLogin = false"
+                    >
+                      Create account
+                    </button>
+                  </div>
+
+                  <form
+                    class="flex flex-col gap-4"
+                    @submit.prevent="handleSubmit"
+                  >
+                    <div class="flex flex-col gap-1.5">
+                      <label
+                        for="hero-email"
+                        class="text-xs font-semibold text-neutral-500 uppercase tracking-wider"
+                        >Email</label
+                      >
+                      <InputText
+                        id="hero-email"
+                        v-model="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        class="w-full"
+                      />
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                      <label
+                        for="hero-password"
+                        class="text-xs font-semibold text-neutral-500 uppercase tracking-wider"
+                        >Password</label
+                      >
+                      <Password
+                        id="hero-password"
+                        v-model="password"
+                        :feedback="!isLogin"
+                        toggle-mask
+                        input-class="w-full"
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      :label="isLogin ? 'Sign in' : 'Create account'"
+                      :icon="isLogin ? 'pi pi-sign-in' : 'pi pi-user-plus'"
+                      :loading="auth.loading"
+                      :disabled="auth.loading"
+                      class="w-full mt-1"
+                    />
+                  </form>
+
+                  <!-- Divider -->
+                  <div class="flex items-center gap-3 my-4">
+                    <div
+                      class="flex-1 h-px"
+                      style="background-color: var(--hs-border)"
+                    />
+                    <span class="text-xs text-neutral-400">or</span>
+                    <div
+                      class="flex-1 h-px"
+                      style="background-color: var(--hs-border)"
                     />
                   </div>
 
-                  <div class="flex flex-col gap-1.5">
-                    <label
-                      for="hero-password"
-                      class="text-sm font-medium text-neutral-700"
-                      >Password</label
-                    >
-                    <Password
-                      id="hero-password"
-                      v-model="password"
-                      :feedback="!isLogin"
-                      toggle-mask
-                      input-class="w-full"
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    :label="isLogin ? 'Sign in' : 'Create account'"
-                    :loading="auth.loading"
-                    :disabled="auth.loading"
-                    class="w-full mt-1"
-                  />
-                </form>
+                  <router-link
+                    :to="isLogin ? '/register' : '/login'"
+                    class="block text-center text-sm font-medium no-underline transition-colors"
+                    style="color: var(--hs-brand)"
+                  >
+                    {{
+                      isLogin
+                        ? "Don't have an account? Sign up"
+                        : 'Already have an account? Sign in'
+                    }}
+                  </router-link>
+                </div>
               </div>
               <p class="text-center text-xs text-neutral-400 mt-4">
                 No credit card required. Free forever during beta.
@@ -334,7 +385,7 @@ function toggleDarkMode() {
             </div>
             <div
               class="w-12 h-12 rounded-xl mx-auto mb-5 flex items-center justify-center"
-              style="background-color: #eff6ff"
+              style="background-color: var(--hs-icon-bg-blue)"
             >
               <i class="pi pi-desktop text-xl" style="color: var(--hs-info)" />
             </div>
@@ -360,7 +411,7 @@ function toggleDarkMode() {
             </div>
             <div
               class="w-12 h-12 rounded-xl mx-auto mb-5 flex items-center justify-center"
-              style="background-color: #f0fdf4"
+              style="background-color: var(--hs-icon-bg-green)"
             >
               <i
                 class="pi pi-replay text-xl"
@@ -420,7 +471,7 @@ function toggleDarkMode() {
           <div class="card-surface p-6">
             <div
               class="w-10 h-10 rounded-lg mb-4 flex items-center justify-center"
-              style="background-color: #eff6ff"
+              style="background-color: var(--hs-icon-bg-blue)"
             >
               <i class="pi pi-eye text-lg" style="color: var(--hs-info)" />
             </div>
@@ -436,7 +487,7 @@ function toggleDarkMode() {
           <div class="card-surface p-6">
             <div
               class="w-10 h-10 rounded-lg mb-4 flex items-center justify-center"
-              style="background-color: #f5f3ff"
+              style="background-color: var(--hs-icon-bg-purple)"
             >
               <i class="pi pi-replay text-lg" style="color: #7c3aed" />
             </div>
@@ -452,7 +503,7 @@ function toggleDarkMode() {
           <div class="card-surface p-6">
             <div
               class="w-10 h-10 rounded-lg mb-4 flex items-center justify-center"
-              style="background-color: #fffbeb"
+              style="background-color: var(--hs-icon-bg-amber)"
             >
               <i class="pi pi-cog text-lg" style="color: var(--hs-warning)" />
             </div>
@@ -468,7 +519,7 @@ function toggleDarkMode() {
           <div class="card-surface p-6">
             <div
               class="w-10 h-10 rounded-lg mb-4 flex items-center justify-center"
-              style="background-color: #f0fdf4"
+              style="background-color: var(--hs-icon-bg-green)"
             >
               <i
                 class="pi pi-shield text-lg"
@@ -488,7 +539,7 @@ function toggleDarkMode() {
           <div class="card-surface p-6">
             <div
               class="w-10 h-10 rounded-lg mb-4 flex items-center justify-center"
-              style="background-color: #fef2f2"
+              style="background-color: var(--hs-icon-bg-red)"
             >
               <i
                 class="pi pi-download text-lg"
@@ -549,7 +600,7 @@ function toggleDarkMode() {
           <div class="card-surface p-6 flex gap-4 items-start">
             <div
               class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center"
-              style="background-color: #eff6ff"
+              style="background-color: var(--hs-icon-bg-blue)"
             >
               <i class="pi pi-github text-lg" style="color: var(--hs-info)" />
             </div>
@@ -567,7 +618,7 @@ function toggleDarkMode() {
           <div class="card-surface p-6 flex gap-4 items-start">
             <div
               class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center"
-              style="background-color: #f5f3ff"
+              style="background-color: var(--hs-icon-bg-purple)"
             >
               <i class="pi pi-comments text-lg" style="color: #7c3aed" />
             </div>
@@ -585,7 +636,7 @@ function toggleDarkMode() {
           <div class="card-surface p-6 flex gap-4 items-start">
             <div
               class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center"
-              style="background-color: #fffbeb"
+              style="background-color: var(--hs-icon-bg-amber)"
             >
               <i
                 class="pi pi-server text-lg"
@@ -857,5 +908,23 @@ function toggleDarkMode() {
   justify-content: center;
   font-size: 0.75rem;
   font-weight: 700;
+}
+
+/* Auth card styles */
+.auth-card {
+  border-radius: 1rem;
+}
+
+.auth-card-header {
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, var(--hs-brand) 0%, #0f766e 100%);
+}
+
+:global(.dark-mode) .auth-card-header {
+  background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+}
+
+.auth-toggle-active {
+  background-color: var(--hs-brand);
 }
 </style>
