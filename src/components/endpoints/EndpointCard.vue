@@ -61,9 +61,12 @@ async function copyUrl() {
             endpoint.is_active ? 'status-dot-active' : 'status-dot-inactive',
           ]"
         />
-        <span class="text-sm font-semibold text-neutral-900 truncate">{{
-          endpoint.name
-        }}</span>
+        <router-link
+          :to="{ name: 'endpoint-detail', params: { id: endpoint.id } }"
+          class="text-sm font-semibold text-neutral-900 truncate no-underline hover:text-teal-600 transition-colors"
+        >
+          {{ endpoint.name }}
+        </router-link>
       </div>
       <slot name="toggle" />
     </div>

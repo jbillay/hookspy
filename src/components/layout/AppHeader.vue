@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import RelayStatus from '../relay/RelayStatus.vue'
 import { useAuth } from '../../composables/use-auth.js'
@@ -8,6 +8,22 @@ const router = useRouter()
 const route = useRoute()
 const auth = useAuth()
 const mobileMenuOpen = ref(false)
+const isDark = ref(false)
+
+onMounted(() => {
+  isDark.value = localStorage.getItem('hs-dark-mode') === 'true'
+  applyDarkMode(isDark.value)
+})
+
+function toggleDarkMode() {
+  isDark.value = !isDark.value
+  localStorage.setItem('hs-dark-mode', isDark.value)
+  applyDarkMode(isDark.value)
+}
+
+function applyDarkMode(dark) {
+  document.documentElement.classList.toggle('dark-mode', dark)
+}
 
 async function handleLogout() {
   await auth.signOut()
@@ -25,7 +41,10 @@ function userInitial() {
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 bg-white border-b border-neutral-200">
+  <header
+    class="sticky top-0 z-50 border-b border-neutral-200"
+    style="background-color: var(--hs-bg-surface)"
+  >
     <div class="max-w-7xl mx-auto px-6">
       <div class="flex items-center justify-between h-14">
         <!-- Left: Logo + Nav -->
@@ -83,9 +102,16 @@ function userInitial() {
           </nav>
         </div>
 
-        <!-- Right: Relay + User -->
+        <!-- Right: Relay + Dark mode + User -->
         <div class="hidden md:flex items-center gap-4">
           <RelayStatus />
+          <button
+            class="p-1.5 text-neutral-500 hover:text-neutral-700 transition-colors bg-transparent border-0 cursor-pointer"
+            title="Toggle dark mode"
+            @click="toggleDarkMode"
+          >
+            <i :class="isDark ? 'pi pi-sun' : 'pi pi-moon'" class="text-sm" />
+          </button>
           <div class="w-px h-5 bg-neutral-200" />
           <div class="flex items-center gap-2">
             <div
@@ -142,12 +168,23 @@ function userInitial() {
         </router-link>
         <div class="mt-2 px-3 flex items-center justify-between">
           <RelayStatus />
-          <button
-            class="text-sm text-neutral-500 hover:text-neutral-700 bg-transparent border-0 cursor-pointer"
-            @click="handleLogout"
-          >
-            Sign out
-          </button>
+          <div class="flex items-center gap-3">
+            <button
+              class="p-1.5 text-neutral-500 hover:text-neutral-700 transition-colors bg-transparent border-0 cursor-pointer"
+              @click="toggleDarkMode"
+            >
+              <i
+                :class="isDark ? 'pi pi-sun' : 'pi pi-moon'"
+                class="text-sm"
+              />
+            </button>
+            <button
+              class="text-sm text-neutral-500 hover:text-neutral-700 bg-transparent border-0 cursor-pointer"
+              @click="handleLogout"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -102,8 +102,8 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: 'Too Many Requests' })
   }
 
-  // Build request URL with query string
-  const requestUrl = req.url || `/api/hook/${slug}`
+  // Build clean request URL (without internal query params)
+  const requestUrl = `/api/hook/${slug}${subPath || ''}`
 
   // Insert webhook log
   const { data: log, error: insertError } = await supabase

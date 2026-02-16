@@ -36,6 +36,46 @@
   --hs-method-patch: #7c3aed;
 }
 
+.dark-mode {
+  /* Brand */
+  --hs-brand: #14b8a6;
+  --hs-brand-hover: #2dd4bf;
+  --hs-brand-light: #042f2e;
+  --hs-brand-subtle: #0f2b2a;
+
+  /* Backgrounds */
+  --hs-bg-page: #0a0a0a;
+  --hs-bg-surface: #171717;
+
+  /* Text */
+  --hs-text-primary: #fafafa;
+  --hs-text-secondary: #a3a3a3;
+  --hs-text-muted: #525252;
+
+  /* Borders */
+  --hs-border: #262626;
+  --hs-border-strong: #404040;
+
+  /* Status */
+  --hs-success: #22c55e;
+  --hs-error: #ef4444;
+  --hs-warning: #f59e0b;
+  --hs-info: #3b82f6;
+
+  /* Method colors */
+  --hs-method-get: #3b82f6;
+  --hs-method-post: #22c55e;
+  --hs-method-put: #f59e0b;
+  --hs-method-delete: #ef4444;
+  --hs-method-patch: #8b5cf6;
+}
+
+.dark-mode body,
+.dark-mode {
+  background-color: var(--hs-bg-page);
+  color: var(--hs-text-primary);
+}
+
 body {
   font-family:
     'Plus Jakarta Sans',
@@ -181,6 +221,76 @@ body {
   .btn-brand:active {
     transform: scale(0.98);
   }
+}
+
+/* Dark mode overrides for Tailwind neutral colors and common elements */
+.dark-mode .card-surface {
+  @apply bg-neutral-900 border-neutral-700;
+}
+
+.dark-mode .text-neutral-900 {
+  color: #fafafa;
+}
+
+.dark-mode .text-neutral-800 {
+  color: #e5e5e5;
+}
+
+.dark-mode .text-neutral-700 {
+  color: #d4d4d4;
+}
+
+.dark-mode .text-neutral-600 {
+  color: #a3a3a3;
+}
+
+.dark-mode .text-neutral-500 {
+  color: #737373;
+}
+
+.dark-mode .bg-neutral-50 {
+  background-color: #1a1a1a;
+}
+
+.dark-mode .bg-neutral-100 {
+  background-color: #262626;
+}
+
+.dark-mode .border-neutral-200 {
+  border-color: #333333;
+}
+
+.dark-mode .border-neutral-100 {
+  border-color: #262626;
+}
+
+.dark-mode .bg-white {
+  background-color: #171717;
+}
+
+.dark-mode .badge-method-get {
+  background-color: #172554;
+  color: #60a5fa;
+}
+
+.dark-mode .badge-method-post {
+  background-color: #052e16;
+  color: #4ade80;
+}
+
+.dark-mode .badge-method-put {
+  background-color: #422006;
+  color: #fbbf24;
+}
+
+.dark-mode .badge-method-delete {
+  background-color: #450a0a;
+  color: #f87171;
+}
+
+.dark-mode .badge-method-patch {
+  background-color: #2e1065;
+  color: #a78bfa;
 }
 
 @keyframes pulse-ring {

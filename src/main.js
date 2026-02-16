@@ -27,6 +27,11 @@ app.use(PrimeVue, {
 app.use(ToastService)
 app.use(ConfirmationService)
 
+// Apply dark mode before mount to prevent flash
+if (localStorage.getItem('hs-dark-mode') === 'true') {
+  document.documentElement.classList.add('dark-mode')
+}
+
 const authStore = useAuthStore()
 authStore.initAuth()
 

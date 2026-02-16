@@ -8,6 +8,7 @@ import ProgressSpinner from 'primevue/progressspinner'
 import LogDetail from './LogDetail.vue'
 import LogFilters from './LogFilters.vue'
 import { useLogs } from '../../composables/use-logs.js'
+import { useEndpoints } from '../../composables/use-endpoints.js'
 
 const props = defineProps({
   endpointId: {
@@ -17,6 +18,7 @@ const props = defineProps({
 })
 
 const store = useLogs()
+const endpointsStore = useEndpoints()
 const router = useRouter()
 const route = useRoute()
 const expandedRows = ref({})
@@ -28,9 +30,22 @@ const filters = ref({
   q: route.query.q || '',
   method: route.query.method ? route.query.method.split(',') : [],
   status: route.query.status ? route.query.status.split(',') : [],
-  from: route.query.from ? new Date(route.query.from) : null,
-  to: route.query.to ? new Date(route.query.to) : null,
+  endpointIds: route.query.endpointIds
+    ? route.query.endpointIds.split(',')
+    : [],
+  from: null,
+  to: null,
 })
+
+function cleanUrl(url) {
+  if (!url) return '--'
+  try {
+    const idx = url.indexOf('?')
+    return idx !== -1 ? url.substring(0, idx) : url
+  } catch {
+    return url
+  }
+}
 
 function buildQueryParams() {
   const params = {}
@@ -39,8 +54,8 @@ function buildQueryParams() {
     params.method = filters.value.method.join(',')
   if (filters.value.status.length > 0)
     params.status = filters.value.status.join(',')
-  if (filters.value.from) params.from = filters.value.from.toISOString()
-  if (filters.value.to) params.to = filters.value.to.toISOString()
+  if (filters.value.endpointIds.length > 0)
+    params.endpointIds = filters.value.endpointIds.join(',')
   return params
 }
 
@@ -58,25 +73,41 @@ function onFiltersUpdate(newFilters) {
   if (newFilters.status.join(',') !== prev.status.join(',')) {
     store.setStatusFilter(newFilters.status)
   }
-  if (
-    newFilters.from?.toISOString() !== prev.from?.toISOString() ||
-    newFilters.to?.toISOString() !== prev.to?.toISOString()
-  ) {
-    store.setDateRange(newFilters.from, newFilters.to)
+  if (newFilters.endpointIds.join(',') !== prev.endpointIds.join(',')) {
+    if (newFilters.endpointIds.length > 0) {
+      store.setEndpointFilter(newFilters.endpointIds)
+    } else {
+      store.endpointFilter = null
+      store.fetchLogs()
+    }
   }
 
   router.replace({ query: buildQueryParams() })
 }
 
 function clearFilters() {
-  filters.value = { q: '', method: [], status: [], from: null, to: null }
+  filters.value = {
+    q: '',
+    method: [],
+    status: [],
+    endpointIds: [],
+    from: null,
+    to: null,
+  }
   store.clearAllFilters()
   router.replace({ query: {} })
 }
 
 onMounted(async () => {
+  // Fetch endpoints for the filter dropdown (only on global logs page)
+  if (!props.endpointId) {
+    endpointsStore.fetchEndpoints()
+  }
+
   if (props.endpointId) {
     await store.setEndpointFilter(props.endpointId)
+  } else if (filters.value.endpointIds.length > 0) {
+    store.endpointFilter = filters.value.endpointIds
   } else {
     store.endpointFilter = null
   }
@@ -90,12 +121,6 @@ onMounted(async () => {
   }
   if (filters.value.q) {
     store.searchQuery = filters.value.q
-  }
-  if (filters.value.from) {
-    store.dateFrom = filters.value.from
-  }
-  if (filters.value.to) {
-    store.dateTo = filters.value.to
   }
 
   await store.fetchLogs()
@@ -141,6 +166,7 @@ function onPageChange(event) {
   <div>
     <LogFilters
       :model-value="filters"
+      :endpoints="!endpointId ? endpointsStore.endpoints : []"
       @update:model-value="onFiltersUpdate"
       @clear="clearFilters"
     />
@@ -225,7 +251,7 @@ function onPageChange(event) {
             <template #body="{ data }">
               <span
                 class="text-sm font-code text-neutral-600 truncate block max-w-xs"
-                >{{ data.request_url }}</span
+                >{{ cleanUrl(data.request_url) }}</span
               >
             </template>
           </Column>

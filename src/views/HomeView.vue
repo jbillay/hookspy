@@ -65,6 +65,17 @@ async function handleSubmit() {
 }
 
 const currentYear = new Date().getFullYear()
+
+const isDark = ref(
+  typeof localStorage !== 'undefined' &&
+    localStorage.getItem('hs-dark-mode') === 'true',
+)
+
+function toggleDarkMode() {
+  isDark.value = !isDark.value
+  localStorage.setItem('hs-dark-mode', isDark.value)
+  document.documentElement.classList.toggle('dark-mode', isDark.value)
+}
 </script>
 
 <template>
@@ -101,6 +112,16 @@ const currentYear = new Date().getFullYear()
             class="text-neutral-500 no-underline hover:text-neutral-900 transition-colors"
             >Pricing</a
           >
+          <button
+            class="p-1.5 text-neutral-500 hover:text-neutral-700 transition-colors bg-transparent border-0 cursor-pointer"
+            title="Toggle dark mode"
+            @click="toggleDarkMode"
+          >
+            <i
+              :class="isDark ? 'pi pi-sun' : 'pi pi-moon'"
+              class="text-sm"
+            />
+          </button>
           <router-link
             to="/login"
             class="font-medium no-underline"
@@ -156,9 +177,10 @@ const currentYear = new Date().getFullYear()
               </button>
               <a
                 href="#how-it-works"
-                class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold text-neutral-700 bg-white border border-neutral-200 no-underline transition-all duration-200 hover:border-neutral-300 hover:shadow-sm"
+                class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold text-neutral-700 bg-white border-2 border-neutral-300 no-underline transition-all duration-200 hover:border-neutral-400 hover:shadow-sm"
               >
                 See how it works
+                <i class="pi pi-arrow-down text-sm" />
               </a>
             </div>
           </div>
@@ -167,28 +189,38 @@ const currentYear = new Date().getFullYear()
           <div class="flex justify-center lg:justify-end">
             <div class="w-full max-w-sm">
               <div class="card-surface p-8 shadow-sm">
-                <!-- Toggle tabs -->
+                <!-- Auth mode toggle -->
                 <div
-                  class="flex rounded-lg p-1 mb-6"
+                  class="flex rounded-full p-1 mb-6 border border-neutral-200"
                   style="background-color: var(--hs-bg-page)"
                 >
                   <button
-                    class="flex-1 py-2 text-sm font-semibold rounded-md transition-all duration-200"
+                    class="flex-1 py-2.5 text-sm font-semibold rounded-full transition-all duration-200"
                     :class="
                       isLogin
-                        ? 'bg-white shadow-sm text-neutral-900'
-                        : 'text-neutral-500 hover:text-neutral-700'
+                        ? 'text-white shadow-sm'
+                        : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
+                    "
+                    :style="
+                      isLogin
+                        ? 'background-color: var(--hs-brand)'
+                        : ''
                     "
                     @click="isLogin = true"
                   >
                     Sign in
                   </button>
                   <button
-                    class="flex-1 py-2 text-sm font-semibold rounded-md transition-all duration-200"
+                    class="flex-1 py-2.5 text-sm font-semibold rounded-full transition-all duration-200"
                     :class="
                       !isLogin
-                        ? 'bg-white shadow-sm text-neutral-900'
-                        : 'text-neutral-500 hover:text-neutral-700'
+                        ? 'text-white shadow-sm'
+                        : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
+                    "
+                    :style="
+                      !isLogin
+                        ? 'background-color: var(--hs-brand)'
+                        : ''
                     "
                     @click="isLogin = false"
                   >
@@ -458,8 +490,9 @@ const currentYear = new Date().getFullYear()
               Secure by default
             </h3>
             <p class="text-sm text-neutral-500 leading-relaxed">
-              Each endpoint has a unique slug. Endpoints are isolated per user
-              with row-level security. HTTPS everywhere.
+              All traffic is SSL-encrypted end to end. Endpoints are isolated
+              per user with row-level security. We never log or sell your
+              payload data.
             </p>
           </div>
 
@@ -663,6 +696,9 @@ const currentYear = new Date().getFullYear()
                 24-hour log retention
               </li>
             </ul>
+            <p class="text-xs text-neutral-400 mb-6 -mt-4">
+              Requests are stored for 24 hours and then permanently deleted.
+            </p>
             <button
               class="btn-brand w-full py-3"
               @click="router.push({ name: 'register' })"
@@ -778,14 +814,14 @@ const currentYear = new Date().getFullYear()
 
 <style scoped>
 .landing-page {
-  background-color: #ffffff;
+  background-color: var(--hs-bg-surface);
 }
 
 .landing-nav {
   position: sticky;
   top: 0;
   z-index: 50;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: color-mix(in srgb, var(--hs-bg-surface) 90%, transparent);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--hs-border);
 }
@@ -801,13 +837,27 @@ const currentYear = new Date().getFullYear()
 .landing-hero {
   padding-top: 5rem;
   padding-bottom: 5rem;
-  background: linear-gradient(
-    170deg,
-    #f0fdfa 0%,
-    #ffffff 40%,
-    #ffffff 60%,
-    #eff6ff 100%
-  );
+  background:
+    url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='1' fill='%23d4d4d4' fill-opacity='0.3'/%3E%3C/svg%3E"),
+    linear-gradient(
+      170deg,
+      #f0fdfa 0%,
+      #ffffff 40%,
+      #ffffff 60%,
+      #eff6ff 100%
+    );
+}
+
+:global(.dark-mode) .landing-hero {
+  background:
+    url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='1' fill='%23525252' fill-opacity='0.3'/%3E%3C/svg%3E"),
+    linear-gradient(
+      170deg,
+      #0a2420 0%,
+      #0a0a0a 40%,
+      #0a0a0a 60%,
+      #0c1525 100%
+    );
 }
 
 @media (min-width: 640px) {

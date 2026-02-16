@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ProgressSpinner from 'primevue/progressspinner'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import EndpointCard from '../components/endpoints/EndpointCard.vue'
+import EndpointEditDialog from '../components/endpoints/EndpointEditDialog.vue'
 import { useEndpoints } from '../composables/use-endpoints.js'
 import ToggleSwitch from 'primevue/toggleswitch'
 
@@ -13,12 +14,37 @@ const toast = useToast()
 const confirm = useConfirm()
 const store = useEndpoints()
 
+const editDialogVisible = ref(false)
+const editingEndpoint = ref(null)
+
 onMounted(() => {
   store.fetchEndpoints()
 })
 
 function handleEdit(endpoint) {
-  router.push({ name: 'endpoint-detail', params: { id: endpoint.id } })
+  editingEndpoint.value = endpoint
+  editDialogVisible.value = true
+}
+
+async function handleEditSubmit(form) {
+  const { error } = await store.updateEndpoint(editingEndpoint.value.id, form)
+  if (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: error,
+      life: 5000,
+    })
+    return
+  }
+  toast.add({
+    severity: 'success',
+    summary: 'Updated',
+    detail: 'Endpoint updated successfully',
+    life: 3000,
+  })
+  editDialogVisible.value = false
+  editingEndpoint.value = null
 }
 
 function handleDelete(endpoint) {
@@ -126,5 +152,13 @@ async function handleToggle(endpoint) {
         </template>
       </EndpointCard>
     </div>
+
+    <!-- Edit dialog -->
+    <EndpointEditDialog
+      v-model:visible="editDialogVisible"
+      :endpoint="editingEndpoint"
+      :loading="store.loading"
+      @submit="handleEditSubmit"
+    />
   </div>
 </template>

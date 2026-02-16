@@ -2,13 +2,23 @@
 import { ref, watch, onUnmounted } from 'vue'
 import InputText from 'primevue/inputtext'
 import MultiSelect from 'primevue/multiselect'
-import DatePicker from 'primevue/datepicker'
 import Button from 'primevue/button'
 
 const props = defineProps({
   modelValue: {
     type: Object,
-    default: () => ({ q: '', method: [], status: [], from: null, to: null }),
+    default: () => ({
+      q: '',
+      method: [],
+      status: [],
+      endpointIds: [],
+      from: null,
+      to: null,
+    }),
+  },
+  endpoints: {
+    type: Array,
+    default: () => [],
   },
 })
 
@@ -20,11 +30,7 @@ const statusOptions = ['pending', 'forwarding', 'responded', 'timeout', 'error']
 const localSearch = ref(props.modelValue.q || '')
 const localMethod = ref(props.modelValue.method || [])
 const localStatus = ref(props.modelValue.status || [])
-const dateRange = ref(
-  props.modelValue.from
-    ? [props.modelValue.from, props.modelValue.to || null]
-    : null,
-)
+const localEndpointIds = ref(props.modelValue.endpointIds || [])
 
 let debounceTimer = null
 
@@ -33,8 +39,9 @@ function emitUpdate(overrides = {}) {
     q: localSearch.value,
     method: localMethod.value,
     status: localStatus.value,
-    from: dateRange.value?.[0] || null,
-    to: dateRange.value?.[1] || null,
+    endpointIds: localEndpointIds.value,
+    from: null,
+    to: null,
     ...overrides,
   }
   emit('update:modelValue', val)
@@ -55,13 +62,8 @@ function onStatusChange() {
   emitUpdate()
 }
 
-function onDateChange() {
+function onEndpointChange() {
   emitUpdate()
-}
-
-function clearDateRange() {
-  dateRange.value = null
-  emitUpdate({ from: null, to: null })
 }
 
 watch(
@@ -70,7 +72,7 @@ watch(
     localSearch.value = val.q || ''
     localMethod.value = val.method || []
     localStatus.value = val.status || []
-    dateRange.value = val.from ? [val.from, val.to || null] : null
+    localEndpointIds.value = val.endpointIds || []
   },
 )
 
@@ -90,6 +92,22 @@ onUnmounted(() => {
         placeholder="Search logs..."
         class="w-full"
         @input="onSearchInput"
+      />
+    </div>
+
+    <div v-if="endpoints.length > 0">
+      <label class="text-xs font-medium text-neutral-500 mb-1 block"
+        >Endpoint</label
+      >
+      <MultiSelect
+        v-model="localEndpointIds"
+        :options="endpoints"
+        option-label="name"
+        option-value="id"
+        placeholder="All endpoints"
+        display="chip"
+        class="w-56"
+        @change="onEndpointChange"
       />
     </div>
 
@@ -121,37 +139,12 @@ onUnmounted(() => {
       />
     </div>
 
-    <div>
-      <label class="text-xs font-medium text-neutral-500 mb-1 block"
-        >Date range</label
-      >
-      <div class="flex items-center gap-1">
-        <DatePicker
-          v-model="dateRange"
-          selection-mode="range"
-          show-time
-          hour-format="24"
-          placeholder="Select dates"
-          date-format="yy-mm-dd"
-          class="w-64"
-          @date-select="onDateChange"
-        />
-        <button
-          v-if="dateRange"
-          class="p-1.5 text-neutral-400 hover:text-neutral-600 bg-transparent border-0 cursor-pointer transition-colors"
-          @click="clearDateRange"
-        >
-          <i class="pi pi-times text-xs" />
-        </button>
-      </div>
-    </div>
-
     <Button
       v-if="
         localSearch ||
         localMethod.length > 0 ||
         localStatus.length > 0 ||
-        dateRange
+        localEndpointIds.length > 0
       "
       label="Clear"
       icon="pi pi-filter-slash"
