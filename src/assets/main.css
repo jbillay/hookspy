@@ -328,18 +328,6 @@ body {
 }
 
 /* Dark mode: auth card form elements */
-.dark-mode .auth-toggle-track {
-  background-color: #0a0a0a;
-  border-color: #333333;
-}
-
-.dark-mode .auth-toggle-btn {
-  color: #737373;
-}
-
-.dark-mode .auth-toggle-btn:hover {
-  color: #a3a3a3;
-}
 
 /* Dark mode: pricing "coming soon" button */
 .dark-mode button:disabled {
