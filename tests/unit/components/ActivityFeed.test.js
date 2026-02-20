@@ -78,9 +78,9 @@ describe('ActivityFeed', () => {
     expect(wrapper.text()).toContain('2 min ago')
   })
 
-  it('shows loading spinner when loading and no logs', () => {
+  it('shows loading skeleton when loading and no logs', () => {
     const wrapper = mountFeed({ logs: [], loading: true })
-    expect(wrapper.find('.animate-spin').exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'Skeleton' }).exists()).toBe(true)
   })
 
   it('does not show empty state when loading', () => {
