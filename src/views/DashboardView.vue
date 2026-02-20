@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import ProgressSpinner from 'primevue/progressspinner'
+import Skeleton from 'primevue/skeleton'
 import StatCard from '../components/dashboard/StatCard.vue'
 import DashboardEndpointCard from '../components/dashboard/DashboardEndpointCard.vue'
 import ActivityFeed from '../components/dashboard/ActivityFeed.vue'
@@ -34,12 +34,84 @@ function handleToggle(endpoint) {
 
 <template>
   <div class="page-container">
-    <!-- Loading state -->
-    <div
-      v-if="dashboard.loadingStats && !dashboard.hasEndpoints"
-      class="flex justify-center py-20"
-    >
-      <ProgressSpinner />
+    <!-- Loading skeleton -->
+    <div v-if="dashboard.loadingStats && !dashboard.hasEndpoints">
+      <!-- Page header skeleton -->
+      <div class="page-header">
+        <Skeleton width="10rem" height="1.75rem" class="mb-2" />
+        <Skeleton width="20rem" height="1rem" />
+      </div>
+
+      <!-- Stats row skeleton -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div v-for="n in 4" :key="n" class="card-surface p-5">
+          <div class="flex items-start gap-3">
+            <Skeleton shape="circle" size="2.5rem" />
+            <div>
+              <Skeleton width="3rem" height="1.75rem" class="mb-1" />
+              <Skeleton width="5rem" height="0.75rem" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-column layout skeleton -->
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <!-- Left: Endpoint cards skeleton -->
+        <div class="lg:col-span-3">
+          <div class="section-header">
+            <Skeleton width="8rem" height="1.25rem" />
+            <Skeleton width="4rem" height="0.875rem" />
+          </div>
+          <div class="flex flex-col gap-3">
+            <div v-for="n in 3" :key="n" class="card-surface p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <Skeleton shape="circle" size="0.5rem" />
+                  <Skeleton width="8rem" height="0.875rem" />
+                </div>
+                <Skeleton
+                  width="2.5rem"
+                  height="1.25rem"
+                  border-radius="1rem"
+                />
+              </div>
+              <Skeleton
+                width="100%"
+                height="2rem"
+                border-radius="0.5rem"
+                class="mb-3"
+              />
+              <Skeleton width="60%" height="0.75rem" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Activity feed skeleton -->
+        <div class="lg:col-span-2">
+          <div class="section-header">
+            <Skeleton width="8rem" height="1.25rem" />
+            <Skeleton width="4rem" height="0.875rem" />
+          </div>
+          <div class="card-surface">
+            <div
+              v-for="n in 5"
+              :key="n"
+              :class="[
+                'flex items-center gap-3 px-4 py-3',
+                n < 5 ? 'border-b border-neutral-100' : '',
+              ]"
+            >
+              <Skeleton width="3rem" height="1.25rem" border-radius="0.25rem" />
+              <div class="flex-1">
+                <Skeleton width="70%" height="0.875rem" class="mb-1" />
+                <Skeleton width="40%" height="0.625rem" />
+              </div>
+              <Skeleton width="2.5rem" height="0.75rem" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Onboarding state -->

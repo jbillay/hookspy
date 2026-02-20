@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import Skeleton from 'primevue/skeleton'
 import { formatTimeAgo } from '../../composables/use-dashboard.js'
 
 defineProps({
@@ -51,11 +52,23 @@ function goToLogs() {
 
 <template>
   <div class="card-surface">
-    <!-- Loading -->
-    <div v-if="loading && logs.length === 0" class="flex justify-center py-12">
+    <!-- Loading skeleton -->
+    <div v-if="loading && logs.length === 0">
       <div
-        class="w-5 h-5 border-2 border-neutral-200 border-t-brand rounded-full animate-spin"
-      />
+        v-for="n in 5"
+        :key="n"
+        :class="[
+          'flex items-center gap-3 px-4 py-3',
+          n < 5 ? 'border-b border-neutral-100' : '',
+        ]"
+      >
+        <Skeleton width="3rem" height="1.25rem" border-radius="0.25rem" />
+        <div class="flex-1">
+          <Skeleton width="70%" height="0.875rem" class="mb-1" />
+          <Skeleton width="40%" height="0.625rem" />
+        </div>
+        <Skeleton width="2.5rem" height="0.75rem" />
+      </div>
     </div>
 
     <!-- Empty state -->
