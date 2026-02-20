@@ -188,59 +188,26 @@ function toggleDarkMode() {
             <div class="w-full max-w-sm">
               <div class="auth-card card-surface overflow-hidden shadow-lg">
                 <!-- Form header with gradient accent -->
-                <div class="auth-card-header">
-                  <div class="flex items-center gap-3 mb-1">
+                <div class="auth-card-header py-3 px-4">
+                  <div class="flex items-center gap-2">
                     <div
-                      class="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold"
+                      class="w-7 h-7 rounded-md flex items-center justify-center text-white text-xs font-bold"
                       style="background-color: rgba(255, 255, 255, 0.2)"
                     >
-                      <i class="pi pi-user text-base" />
+                      <i class="pi pi-user text-sm" />
                     </div>
                     <div>
-                      <h2 class="text-white text-base font-semibold m-0">
-                        {{ isLogin ? 'Welcome back' : 'Get started' }}
+                      <h2 class="text-white text-sm font-semibold m-0">
+                        Welcome back
                       </h2>
-                      <p class="text-white/70 text-xs m-0 mt-0.5">
-                        {{
-                          isLogin
-                            ? 'Sign in to your account'
-                            : 'Create your free account'
-                        }}
+                      <p class="text-white/70 text-[11px] m-0">
+                        Sign in to your account
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <div class="p-6 pt-5">
-                  <!-- Auth mode toggle -->
-                  <div
-                    class="auth-toggle-track flex rounded-lg p-1 mb-5 border border-neutral-200"
-                    style="background-color: var(--hs-bg-page)"
-                  >
-                    <button
-                      class="auth-toggle-btn flex-1 py-2 text-sm font-semibold rounded-md transition-all duration-200"
-                      :class="
-                        isLogin
-                          ? 'auth-toggle-active text-white shadow-sm'
-                          : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
-                      "
-                      @click="isLogin = true"
-                    >
-                      Sign in
-                    </button>
-                    <button
-                      class="auth-toggle-btn flex-1 py-2 text-sm font-semibold rounded-md transition-all duration-200"
-                      :class="
-                        !isLogin
-                          ? 'auth-toggle-active text-white shadow-sm'
-                          : 'text-neutral-500 hover:text-neutral-700 bg-transparent'
-                      "
-                      @click="isLogin = false"
-                    >
-                      Create account
-                    </button>
-                  </div>
-
                   <form
                     class="flex flex-col gap-4"
                     @submit.prevent="handleSubmit"
@@ -916,7 +883,6 @@ function toggleDarkMode() {
 }
 
 .auth-card-header {
-  padding: 1.25rem 1.5rem;
   background: linear-gradient(135deg, var(--hs-brand) 0%, #0f766e 100%);
 }
 
