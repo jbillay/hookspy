@@ -14,7 +14,7 @@ BEGIN
 
   IF admin_user_id IS NOT NULL THEN
     UPDATE public.profiles
-    SET role = 'admin'
+    SET role = 'admin', plan = 'pro'
     WHERE id = admin_user_id;
     RAISE NOTICE 'Admin role assigned to user: %', admin_email;
   ELSE
