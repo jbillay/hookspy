@@ -44,6 +44,27 @@ const routes = [
     name: 'endpoint-detail',
     component: () => import('../views/EndpointDetailView.vue'),
   },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: () => import('../views/SettingsView.vue'),
+  },
+  {
+    path: '/admin',
+    redirect: '/admin/dashboard',
+  },
+  {
+    path: '/admin/dashboard',
+    name: 'admin-dashboard',
+    component: () => import('../views/AdminDashboardView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/admin/users',
+    name: 'admin-users',
+    component: () => import('../views/AdminUsersView.vue'),
+    meta: { requiresAdmin: true },
+  },
 ]
 
 const router = createRouter({
@@ -69,6 +90,11 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.guest && authStore.isAuthenticated) {
+    return { name: 'dashboard' }
+  }
+
+  // Admin guard
+  if (to.meta.requiresAdmin && !authStore.isAdmin) {
     return { name: 'dashboard' }
   }
 })

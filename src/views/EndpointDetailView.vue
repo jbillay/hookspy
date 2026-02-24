@@ -6,6 +6,7 @@ import { useToast } from 'primevue/usetoast'
 import EndpointForm from '../components/endpoints/EndpointForm.vue'
 import EndpointEditDialog from '../components/endpoints/EndpointEditDialog.vue'
 import HeaderInjectionEditor from '../components/endpoints/HeaderInjectionEditor.vue'
+import ProGate from '../components/shared/ProGate.vue'
 import LogList from '../components/logs/LogList.vue'
 import { useEndpoints } from '../composables/use-endpoints.js'
 
@@ -122,7 +123,9 @@ function handleCancel() {
         @cancel="handleCancel"
       >
         <template #headers="{ form }">
-          <HeaderInjectionEditor v-model="form.custom_headers" />
+          <ProGate feature="headers">
+            <HeaderInjectionEditor v-model="form.custom_headers" />
+          </ProGate>
         </template>
       </EndpointForm>
     </div>

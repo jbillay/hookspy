@@ -22,6 +22,20 @@ vi.mock('../../../api/_lib/cors.js', () => ({
   setCorsHeaders: vi.fn(),
 }))
 
+vi.mock('../../../api/_lib/plans.js', () => ({
+  checkEndpointLimit: vi.fn().mockResolvedValue({
+    allowed: true,
+    current: 1,
+    max: 3,
+  }),
+  getPlanLimits: vi.fn().mockResolvedValue({
+    plan: 'free',
+    max_endpoints: 3,
+    requests_per_min: 30,
+    max_body_bytes: 262144,
+  }),
+}))
+
 const { default: indexHandler } =
   await import('../../../api/endpoints/index.js')
 
@@ -78,6 +92,7 @@ describe('GET /api/endpoints', () => {
     const mockEndpoints = [{ id: 'ep-1', name: 'Test' }]
     mockVerifyAuth.mockResolvedValue({
       user: { id: 'user-1' },
+      profile: { plan: 'free', role: 'user', status: 'active' },
       error: null,
     })
     mockFrom.mockReturnValue({
@@ -109,6 +124,7 @@ describe('POST /api/endpoints', () => {
   it('returns 400 when name is missing', async () => {
     mockVerifyAuth.mockResolvedValue({
       user: { id: 'user-1' },
+      profile: { plan: 'free', role: 'user', status: 'active' },
       error: null,
     })
 
@@ -128,6 +144,7 @@ describe('POST /api/endpoints', () => {
     }
     mockVerifyAuth.mockResolvedValue({
       user: { id: 'user-1' },
+      profile: { plan: 'free', role: 'user', status: 'active' },
       error: null,
     })
     mockFrom.mockReturnValue({
@@ -155,6 +172,7 @@ describe('POST /api/endpoints', () => {
   it('validates port range', async () => {
     mockVerifyAuth.mockResolvedValue({
       user: { id: 'user-1' },
+      profile: { plan: 'free', role: 'user', status: 'active' },
       error: null,
     })
 
@@ -172,6 +190,7 @@ describe('POST /api/endpoints', () => {
   it('validates timeout range', async () => {
     mockVerifyAuth.mockResolvedValue({
       user: { id: 'user-1' },
+      profile: { plan: 'free', role: 'user', status: 'active' },
       error: null,
     })
 
@@ -189,6 +208,7 @@ describe('POST /api/endpoints', () => {
   it('returns 405 for unsupported methods', async () => {
     mockVerifyAuth.mockResolvedValue({
       user: { id: 'user-1' },
+      profile: { plan: 'free', role: 'user', status: 'active' },
       error: null,
     })
 

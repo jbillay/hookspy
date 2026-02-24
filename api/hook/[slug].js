@@ -1,5 +1,6 @@
 import { supabase } from '../_lib/supabase.js'
 import { handleCors, setCorsHeaders } from '../_lib/cors.js'
+import { checkRateLimit, getPlanLimits } from '../_lib/plans.js'
 
 export const config = {
   api: {
@@ -8,40 +9,16 @@ export const config = {
   maxDuration: 60,
 }
 
-const MAX_BODY_SIZE = 1024 * 1024 // 1MB
 const POLL_INTERVAL_MS = 500
-const RATE_LIMIT_WINDOW_MS = 60000
-const RATE_LIMIT_MAX = 60
 
-// In-memory rate limiting (per serverless instance)
-const rateLimitMap = new Map()
-
-function checkRateLimit(slug) {
-  const now = Date.now()
-  const windowKey = `${slug}:${Math.floor(now / RATE_LIMIT_WINDOW_MS)}`
-
-  // Clean old entries
-  for (const [key] of rateLimitMap) {
-    if (!key.startsWith(slug + ':') || key === windowKey) continue
-    rateLimitMap.delete(key)
-  }
-
-  const count = rateLimitMap.get(windowKey) || 0
-  if (count >= RATE_LIMIT_MAX) {
-    return false
-  }
-  rateLimitMap.set(windowKey, count + 1)
-  return true
-}
-
-function readBody(req) {
+function readBody(req, maxSize) {
   return new Promise((resolve, reject) => {
     const chunks = []
     let totalSize = 0
 
     req.on('data', (chunk) => {
       totalSize += chunk.length
-      if (totalSize > MAX_BODY_SIZE) {
+      if (totalSize > maxSize) {
         reject(new Error('PAYLOAD_TOO_LARGE'))
         req.destroy()
         return
@@ -68,27 +45,13 @@ export default async function handler(req, res) {
   if (handleCors(req, res)) return
   setCorsHeaders(req, res)
 
-  // Parse slug from req.query (set by Vercel filesystem routing for [slug].js)
-  // For sub-paths like /api/hook/:slug/extra/path, a vercel.json rewrite passes
-  // the sub-path as ?_subpath=/:subpath to this handler.
   const slug = req.query.slug
   const subPath = req.query._subpath || null
-
-  // Read raw body with size limit
-  let body
-  try {
-    body = await readBody(req)
-  } catch (err) {
-    if (err.message === 'PAYLOAD_TOO_LARGE') {
-      return res.status(413).json({ error: 'Payload Too Large' })
-    }
-    return res.status(500).json({ error: 'Failed to read request body' })
-  }
 
   // Look up endpoint by slug
   const { data: endpoint, error: epError } = await supabase
     .from('endpoints')
-    .select('*')
+    .select('*, profiles:user_id(plan, status)')
     .eq('slug', slug)
     .eq('is_active', true)
     .single()
@@ -97,12 +60,47 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: 'Endpoint not found' })
   }
 
-  // Check rate limit
-  if (!checkRateLimit(slug)) {
-    return res.status(429).json({ error: 'Too Many Requests' })
+  // Check owner status
+  if (endpoint.profiles?.status === 'disabled') {
+    return res.status(403).json({ error: 'Endpoint owner account is disabled' })
   }
 
-  // Build clean request URL (without internal query params)
+  const ownerPlan = endpoint.profiles?.plan || 'free'
+  const limits = await getPlanLimits(ownerPlan)
+
+  if (!limits) {
+    return res.status(500).json({ error: 'Plan configuration not found' })
+  }
+
+  // Check rate limit
+  const rateResult = await checkRateLimit(slug, ownerPlan)
+  if (!rateResult.allowed) {
+    const retryAfter = rateResult.resetAt
+      ? Math.ceil((rateResult.resetAt.getTime() - Date.now()) / 1000)
+      : 60
+    res.setHeader('Retry-After', String(Math.max(1, retryAfter)))
+    return res.status(429).json({
+      error: 'Too Many Requests',
+      message: `Rate limit exceeded. ${ownerPlan} plan allows ${limits.requests_per_min} requests per minute.`,
+    })
+  }
+
+  // Read raw body with plan-based size limit
+  let body
+  try {
+    body = await readBody(req, limits.max_body_bytes)
+  } catch (err) {
+    if (err.message === 'PAYLOAD_TOO_LARGE') {
+      return res.status(413).json({
+        error: 'Payload Too Large',
+        max_size: limits.max_body_bytes,
+        message: `${ownerPlan} plan allows up to ${Math.round(limits.max_body_bytes / 1024)} KB request bodies.`,
+      })
+    }
+    return res.status(500).json({ error: 'Failed to read request body' })
+  }
+
+  // Build clean request URL
   const requestUrl = `/api/hook/${slug}${subPath || ''}`
 
   // Insert webhook log
@@ -124,8 +122,12 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to store webhook' })
   }
 
-  // Polling loop
-  const timeoutMs = (endpoint.timeout_seconds || 30) * 1000
+  // Cap effective timeout to plan limit
+  const effectiveTimeout = Math.min(
+    endpoint.timeout_seconds || 30,
+    limits.max_timeout_seconds,
+  )
+  const timeoutMs = effectiveTimeout * 1000
   const startTime = Date.now()
 
   // eslint-disable-next-line no-constant-condition
@@ -134,7 +136,6 @@ export default async function handler(req, res) {
 
     const elapsed = Date.now() - startTime
 
-    // Check timeout
     if (elapsed >= timeoutMs) {
       await supabase
         .from('webhook_logs')
@@ -143,11 +144,10 @@ export default async function handler(req, res) {
 
       return res.status(504).json({
         error: 'Gateway Timeout',
-        message: `Local server did not respond within ${endpoint.timeout_seconds || 30}s`,
+        message: `Local server did not respond within ${effectiveTimeout}s`,
       })
     }
 
-    // Poll for status change
     const { data: current, error: pollError } = await supabase
       .from('webhook_logs')
       .select('*')
@@ -159,11 +159,9 @@ export default async function handler(req, res) {
     }
 
     if (current.status === 'responded') {
-      // Return the stored response to the external system
       if (current.response_headers) {
         for (const [key, value] of Object.entries(current.response_headers)) {
           const lowerKey = key.toLowerCase()
-          // Skip headers that Vercel manages
           if (
             lowerKey === 'transfer-encoding' ||
             lowerKey === 'connection' ||
@@ -184,7 +182,5 @@ export default async function handler(req, res) {
         message: current.error_message || 'Local server error',
       })
     }
-
-    // pending or forwarding — continue polling
   }
 }

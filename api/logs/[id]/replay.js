@@ -1,6 +1,7 @@
 import { supabase } from '../../_lib/supabase.js'
 import { verifyAuth } from '../../_lib/auth.js'
 import { handleCors, setCorsHeaders } from '../../_lib/cors.js'
+import { getPlanLimits } from '../../_lib/plans.js'
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return
@@ -10,9 +11,18 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { user, error: authError } = await verifyAuth(req)
+  const { user, profile, error: authError } = await verifyAuth(req)
   if (authError || !user) {
     return res.status(401).json({ error: authError })
+  }
+
+  // Gate replay for Free users
+  const limits = await getPlanLimits(profile?.plan || 'free')
+  if (limits && !limits.can_replay) {
+    return res.status(403).json({
+      error: 'Pro feature',
+      message: 'Replay is available on the Pro plan.',
+    })
   }
 
   const { id } = req.query

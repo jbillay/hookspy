@@ -4,7 +4,11 @@ export async function verifyAuth(req) {
   const authHeader = req.headers.authorization
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { user: null, error: 'Missing or invalid Authorization header' }
+    return {
+      user: null,
+      profile: null,
+      error: 'Missing or invalid Authorization header',
+    }
   }
 
   const token = authHeader.replace('Bearer ', '')
@@ -15,8 +19,24 @@ export async function verifyAuth(req) {
   } = await supabase.auth.getUser(token)
 
   if (error || !user) {
-    return { user: null, error: 'Invalid or expired token' }
+    return { user: null, profile: null, error: 'Invalid or expired token' }
   }
 
-  return { user, error: null }
+  // Fetch profile with plan/role/status for lazy invalidation
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('plan, role, status')
+    .eq('id', user.id)
+    .single()
+
+  if (profileError || !profile) {
+    return { user, profile: null, error: null }
+  }
+
+  // Lazy session invalidation: disabled users are rejected
+  if (profile.status === 'disabled') {
+    return { user: null, profile: null, error: 'account_disabled' }
+  }
+
+  return { user, profile, error: null }
 }

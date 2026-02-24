@@ -1,12 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockGetUser = vi.fn()
+const mockProfileSingle = vi.fn()
 
 vi.mock('../../../api/_lib/supabase.js', () => ({
   supabase: {
     auth: {
       getUser: (...args) => mockGetUser(...args),
     },
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          single: () => mockProfileSingle(),
+        }),
+      }),
+    }),
   },
 }))
 
@@ -15,6 +23,11 @@ const { verifyAuth } = await import('../../../api/_lib/auth.js')
 describe('verifyAuth', () => {
   beforeEach(() => {
     mockGetUser.mockReset()
+    mockProfileSingle.mockReset()
+    mockProfileSingle.mockResolvedValue({
+      data: { plan: 'free', role: 'user', status: 'active' },
+      error: null,
+    })
   })
 
   it('returns user on valid token', async () => {

@@ -2,11 +2,14 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import RelayStatus from '../relay/RelayStatus.vue'
+import PlanBadge from '../settings/PlanBadge.vue'
 import { useAuth } from '../../composables/use-auth.js'
+import { useUserPlan } from '../../composables/use-user-plan.js'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuth()
+const { plan, isAdmin } = useUserPlan()
 const mobileMenuOpen = ref(false)
 const isDark = ref(false)
 
@@ -99,6 +102,29 @@ function userInitial() {
             >
               Logs
             </router-link>
+            <router-link
+              to="/settings"
+              :class="[
+                'px-3 py-1.5 rounded-lg text-sm font-medium no-underline transition-colors duration-150',
+                isActive('/settings')
+                  ? 'bg-brand-subtle text-brand'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100',
+              ]"
+            >
+              Settings
+            </router-link>
+            <router-link
+              v-if="isAdmin"
+              to="/admin/dashboard"
+              :class="[
+                'px-3 py-1.5 rounded-lg text-sm font-medium no-underline transition-colors duration-150',
+                isActive('/admin')
+                  ? 'bg-brand-subtle text-brand'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100',
+              ]"
+            >
+              Admin
+            </router-link>
           </nav>
         </div>
 
@@ -122,6 +148,7 @@ function userInitial() {
             <span class="text-sm text-neutral-600 max-w-[160px] truncate">{{
               auth.user?.email
             }}</span>
+            <PlanBadge :plan="plan" />
           </div>
           <button
             class="text-sm text-neutral-500 hover:text-neutral-700 transition-colors cursor-pointer bg-transparent border-0 px-2 py-1"
@@ -165,6 +192,21 @@ function userInitial() {
           @click="mobileMenuOpen = false"
         >
           Logs
+        </router-link>
+        <router-link
+          to="/settings"
+          class="px-3 py-2 rounded-lg text-sm font-medium no-underline text-neutral-700 hover:bg-neutral-100"
+          @click="mobileMenuOpen = false"
+        >
+          Settings
+        </router-link>
+        <router-link
+          v-if="isAdmin"
+          to="/admin/dashboard"
+          class="px-3 py-2 rounded-lg text-sm font-medium no-underline text-neutral-700 hover:bg-neutral-100"
+          @click="mobileMenuOpen = false"
+        >
+          Admin
         </router-link>
         <div class="mt-2 px-3 flex items-center justify-between">
           <RelayStatus />

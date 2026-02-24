@@ -1,6 +1,7 @@
 import { supabase } from '../_lib/supabase.js'
 import { verifyAuth } from '../_lib/auth.js'
 import { handleCors, setCorsHeaders } from '../_lib/cors.js'
+import { getPlanLimits } from '../_lib/plans.js'
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return
@@ -10,10 +11,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { user, error: authError } = await verifyAuth(req)
+  const { user, profile, error: authError } = await verifyAuth(req)
   if (authError || !user) {
     return res.status(401).json({ error: authError })
   }
+
+  // Check plan limits for search capability
+  const limits = await getPlanLimits(profile?.plan || 'free')
+  const canSearch = limits?.can_search || false
 
   const {
     endpoint_id,
@@ -41,35 +46,39 @@ export default async function handler(req, res) {
     query = query.eq('endpoint_id', endpoint_id)
   }
 
-  if (method) {
-    const methods = method.split(',').filter(Boolean)
-    if (methods.length > 0) {
-      query = query.in('request_method', methods)
+  // Advanced filters - only for users with search capability
+  if (canSearch) {
+    if (method) {
+      const methods = method.split(',').filter(Boolean)
+      if (methods.length > 0) {
+        query = query.in('request_method', methods)
+      }
+    }
+
+    if (dateFrom) {
+      query = query.gte('received_at', dateFrom)
+    }
+
+    if (dateTo) {
+      query = query.lte('received_at', dateTo)
+    }
+
+    if (q) {
+      // Sanitize: strip PostgREST operators to prevent query injection
+      const sanitized = q.replace(/[,.*()\\]/g, '').trim()
+      if (sanitized) {
+        query = query.or(
+          `request_body.ilike.%${sanitized}%,request_url.ilike.%${sanitized}%,response_body.ilike.%${sanitized}%,error_message.ilike.%${sanitized}%`,
+        )
+      }
     }
   }
 
+  // Status filter is always available
   if (status) {
     const statuses = status.split(',').filter(Boolean)
     if (statuses.length > 0) {
       query = query.in('status', statuses)
-    }
-  }
-
-  if (dateFrom) {
-    query = query.gte('received_at', dateFrom)
-  }
-
-  if (dateTo) {
-    query = query.lte('received_at', dateTo)
-  }
-
-  if (q) {
-    // Sanitize: strip PostgREST operators to prevent query injection
-    const sanitized = q.replace(/[,.*()\\]/g, '').trim()
-    if (sanitized) {
-      query = query.or(
-        `request_body.ilike.%${sanitized}%,request_url.ilike.%${sanitized}%,response_body.ilike.%${sanitized}%,error_message.ilike.%${sanitized}%`,
-      )
     }
   }
 

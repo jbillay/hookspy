@@ -3,6 +3,9 @@ import { ref, watch, onUnmounted } from 'vue'
 import InputText from 'primevue/inputtext'
 import MultiSelect from 'primevue/multiselect'
 import Button from 'primevue/button'
+import { useUserPlan } from '../../composables/use-user-plan.js'
+
+const { canSearch } = useUserPlan()
 
 const props = defineProps({
   modelValue: {
@@ -85,12 +88,14 @@ onUnmounted(() => {
   <div class="card-surface p-4 mb-4 flex flex-wrap gap-3 items-end">
     <div class="flex-1 min-w-48">
       <label class="text-xs font-medium text-neutral-500 mb-1 block"
-        >Search</label
-      >
+        >Search
+        <span v-if="!canSearch" class="text-neutral-400">(Pro)</span>
+      </label>
       <InputText
         v-model="localSearch"
         placeholder="Search logs..."
         class="w-full"
+        :disabled="!canSearch"
         @input="onSearchInput"
       />
     </div>
@@ -113,14 +118,16 @@ onUnmounted(() => {
 
     <div>
       <label class="text-xs font-medium text-neutral-500 mb-1 block"
-        >Method</label
-      >
+        >Method
+        <span v-if="!canSearch" class="text-neutral-400">(Pro)</span>
+      </label>
       <MultiSelect
         v-model="localMethod"
         :options="methodOptions"
         placeholder="All methods"
         display="chip"
         class="w-48"
+        :disabled="!canSearch"
         @change="onMethodChange"
       />
     </div>

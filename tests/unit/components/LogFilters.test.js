@@ -2,6 +2,34 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
+
+vi.mock('../../../src/composables/use-supabase.js', () => ({
+  useSupabase: () => ({
+    client: {
+      auth: {
+        onAuthStateChange: () => ({
+          data: { subscription: { unsubscribe: vi.fn() } },
+        }),
+      },
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            single: () => Promise.resolve({ data: null, error: null }),
+          }),
+        }),
+      }),
+    },
+  }),
+}))
+
+vi.mock('../../../src/composables/use-user-plan.js', () => ({
+  useUserPlan: () => ({
+    canSearch: { value: true },
+    canReplay: { value: true },
+    canInjectHeaders: { value: true },
+  }),
+}))
+
 import LogFilters from '../../../src/components/logs/LogFilters.vue'
 
 // PrimeVue DatePicker calls matchMedia on mount
@@ -87,7 +115,7 @@ describe('LogFilters', () => {
 
     const clearBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Clear filters'))
+      .find((b) => b.text().includes('Clear'))
 
     if (clearBtn) {
       await clearBtn.trigger('click')
@@ -99,7 +127,7 @@ describe('LogFilters', () => {
     const noFilters = mountFilters()
     const clearBtns = noFilters
       .findAll('button')
-      .filter((b) => b.text().includes('Clear filters'))
+      .filter((b) => b.text().includes('Clear'))
     expect(clearBtns).toHaveLength(0)
   })
 

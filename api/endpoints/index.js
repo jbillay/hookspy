@@ -2,6 +2,7 @@ import { supabase } from '../_lib/supabase.js'
 import { verifyAuth } from '../_lib/auth.js'
 import { handleCors, setCorsHeaders } from '../_lib/cors.js'
 import { validateEndpoint } from '../_lib/validation.js'
+import { checkEndpointLimit, getPlanLimits } from '../_lib/plans.js'
 
 function generateSlug() {
   return crypto.randomUUID().replace(/-/g, '').slice(0, 8)
@@ -12,9 +13,10 @@ export default async function handler(req, res) {
 
   setCorsHeaders(req, res)
 
-  const { user, error: authError } = await verifyAuth(req)
+  const { user, profile, error: authError } = await verifyAuth(req)
   if (authError) {
-    return res.status(401).json({ error: authError })
+    const status = authError === 'account_disabled' ? 401 : 401
+    return res.status(status).json({ error: authError })
   }
 
   if (req.method === 'GET') {
@@ -38,7 +40,23 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: validationError })
     }
 
+    // Check endpoint limit
+    const { allowed, current, max } = await checkEndpointLimit(user.id)
+    if (!allowed) {
+      const limits = await getPlanLimits(profile?.plan || 'free')
+      return res.status(403).json({
+        error: 'Endpoint limit reached',
+        message: `Your ${profile?.plan || 'free'} plan allows up to ${max} endpoints. Upgrade to Pro for up to ${limits?.plan === 'pro' ? max : 25} endpoints.`,
+        current,
+        max,
+      })
+    }
+
     const slug = generateSlug()
+
+    // Strip custom headers for Free users
+    const customHeaders =
+      profile?.plan === 'free' ? {} : body.custom_headers || {}
 
     const { data, error } = await supabase
       .from('endpoints')
@@ -50,7 +68,7 @@ export default async function handler(req, res) {
         target_port: body.target_port || 3000,
         target_path: body.target_path || '/',
         timeout_seconds: body.timeout_seconds || 30,
-        custom_headers: body.custom_headers || {},
+        custom_headers: customHeaders,
       })
       .select()
       .single()

@@ -6,19 +6,28 @@ import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import EndpointCard from '../components/endpoints/EndpointCard.vue'
 import EndpointEditDialog from '../components/endpoints/EndpointEditDialog.vue'
+import PlanUsage from '../components/settings/PlanUsage.vue'
 import { useEndpoints } from '../composables/use-endpoints.js'
+import { useUserPlan } from '../composables/use-user-plan.js'
 import ToggleSwitch from 'primevue/toggleswitch'
 
 const router = useRouter()
 const toast = useToast()
 const confirm = useConfirm()
 const store = useEndpoints()
+const { endpointsMax } = useUserPlan()
 
 const editDialogVisible = ref(false)
+const atLimit = ref(false)
+
+function checkLimit() {
+  atLimit.value = store.endpoints.length >= endpointsMax.value
+}
 const editingEndpoint = ref(null)
 
-onMounted(() => {
-  store.fetchEndpoints()
+onMounted(async () => {
+  await store.fetchEndpoints()
+  checkLimit()
 })
 
 function handleEdit(endpoint) {
@@ -99,10 +108,26 @@ async function handleToggle(endpoint) {
           Manage your webhook endpoints and forwarding targets
         </p>
       </div>
-      <button class="btn-brand" @click="router.push({ name: 'endpoint-new' })">
+      <button
+        v-if="!atLimit"
+        class="btn-brand"
+        @click="router.push({ name: 'endpoint-new' })"
+      >
         <i class="pi pi-plus text-sm" />
         New Endpoint
       </button>
+      <span v-else class="text-sm text-neutral-500">
+        Endpoint limit reached
+      </span>
+    </div>
+
+    <!-- Usage indicator -->
+    <div v-if="store.endpoints.length > 0" class="mb-4 max-w-xs">
+      <PlanUsage
+        label="Endpoints"
+        :current="store.endpoints.length"
+        :max="endpointsMax"
+      />
     </div>
 
     <!-- Loading -->

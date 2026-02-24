@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import PayloadViewer from './PayloadViewer.vue'
+import ProGate from '../shared/ProGate.vue'
 import { useLogs } from '../../composables/use-logs.js'
 
 const props = defineProps({
@@ -85,16 +86,18 @@ function statusCodeClass(code) {
         <i class="pi pi-replay text-xs" /> Replay
       </span>
       <div class="ml-auto">
-        <Button
-          v-if="terminalStatuses.includes(log.status)"
-          label="Replay"
-          icon="pi pi-replay"
-          severity="secondary"
-          text
-          size="small"
-          :loading="replayLoading"
-          @click="handleReplay"
-        />
+        <ProGate feature="replay">
+          <Button
+            v-if="terminalStatuses.includes(log.status)"
+            label="Replay"
+            icon="pi pi-replay"
+            severity="secondary"
+            text
+            size="small"
+            :loading="replayLoading"
+            @click="handleReplay"
+          />
+        </ProGate>
       </div>
     </div>
 

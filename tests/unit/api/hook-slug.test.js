@@ -20,6 +20,25 @@ vi.mock('../../../api/_lib/cors.js', () => ({
   setCorsHeaders: vi.fn(),
 }))
 
+vi.mock('../../../api/_lib/plans.js', () => ({
+  getPlanLimits: vi.fn().mockResolvedValue({
+    plan: 'free',
+    max_endpoints: 3,
+    requests_per_min: 30,
+    max_body_bytes: 1048576,
+    log_retention_hours: 6,
+    max_timeout_seconds: 30,
+    can_replay: false,
+    can_search: false,
+    can_inject_headers: false,
+  }),
+  checkRateLimit: vi.fn().mockResolvedValue({
+    allowed: true,
+    remaining: 29,
+    resetAt: null,
+  }),
+}))
+
 const { default: handler, config } = await import('../../../api/hook/[slug].js')
 
 function createMockReq(overrides = {}) {
@@ -82,6 +101,7 @@ function setupSupabaseMocks({
     is_active: true,
     timeout_seconds: 30,
     user_id: 'user-1',
+    profiles: { plan: 'free', status: 'active' },
   },
   endpointError = null,
   insertResult = {
@@ -345,7 +365,9 @@ describe('webhook receiver - api/hook/[slug]', () => {
       await promise
 
       expect(res.status).toHaveBeenCalledWith(413)
-      expect(res.json).toHaveBeenCalledWith({ error: 'Payload Too Large' })
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: 'Payload Too Large' }),
+      )
     })
   })
 

@@ -5,10 +5,12 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Paginator from 'primevue/paginator'
 import ProgressSpinner from 'primevue/progressspinner'
+import Message from 'primevue/message'
 import LogDetail from './LogDetail.vue'
 import LogFilters from './LogFilters.vue'
 import { useLogs } from '../../composables/use-logs.js'
 import { useEndpoints } from '../../composables/use-endpoints.js'
+import { useUserPlan } from '../../composables/use-user-plan.js'
 
 const props = defineProps({
   endpointId: {
@@ -19,6 +21,7 @@ const props = defineProps({
 
 const store = useLogs()
 const endpointsStore = useEndpoints()
+const { isFree } = useUserPlan()
 const router = useRouter()
 const route = useRoute()
 const expandedRows = ref({})
@@ -164,6 +167,14 @@ function onPageChange(event) {
 
 <template>
   <div>
+    <Message
+      v-if="isFree"
+      severity="info"
+      :closable="false"
+      class="mb-3 text-sm"
+    >
+      Free plan retains logs for 6 hours
+    </Message>
     <LogFilters
       :model-value="filters"
       :endpoints="!endpointId ? endpointsStore.endpoints : []"
