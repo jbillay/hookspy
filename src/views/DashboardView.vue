@@ -35,7 +35,7 @@ function handleToggle(endpoint) {
 <template>
   <div class="page-container">
     <!-- Loading skeleton -->
-    <div v-if="dashboard.loadingStats && !dashboard.hasEndpoints">
+    <div v-if="!endpoints.initialLoaded || endpoints.loading">
       <!-- Page header skeleton -->
       <div class="page-header">
         <Skeleton width="10rem" height="1.75rem" class="mb-2" />
@@ -116,7 +116,7 @@ function handleToggle(endpoint) {
 
     <!-- Onboarding state -->
     <div
-      v-else-if="!dashboard.hasEndpoints && !dashboard.loadingStats"
+      v-else-if="!dashboard.hasEndpoints"
       class="flex items-center justify-center min-h-[calc(100vh-10rem)]"
     >
       <div class="text-center max-w-md">

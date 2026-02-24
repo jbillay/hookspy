@@ -5,6 +5,7 @@ import { useAuthStore } from './auth.js'
 export const useEndpointsStore = defineStore('endpoints', () => {
   const endpoints = ref([])
   const loading = ref(false)
+  const initialLoaded = ref(false)
   const error = ref(null)
 
   function getAuthHeaders() {
@@ -40,6 +41,7 @@ export const useEndpointsStore = defineStore('endpoints', () => {
       return { error: error.value }
     } finally {
       loading.value = false
+      initialLoaded.value = true
     }
   }
 
@@ -171,6 +173,7 @@ export const useEndpointsStore = defineStore('endpoints', () => {
   return {
     endpoints,
     loading,
+    initialLoaded,
     error,
     fetchEndpoints,
     createEndpoint,

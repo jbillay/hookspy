@@ -1,8 +1,11 @@
 <script setup>
 import { computed } from 'vue'
+import Skeleton from 'primevue/skeleton'
 import { useRelay } from '../../composables/use-relay.js'
+import { useEndpoints } from '../../composables/use-endpoints.js'
 
 const relay = useRelay()
+const endpoints = useEndpoints()
 
 const statusConfig = computed(() => {
   switch (relay.relayStatus) {
@@ -29,7 +32,14 @@ const statusConfig = computed(() => {
 </script>
 
 <template>
+  <Skeleton
+    v-if="!endpoints.initialLoaded"
+    width="6rem"
+    height="1.5rem"
+    border-radius="9999px"
+  />
   <div
+    v-else
     :class="[
       'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border',
       statusConfig.pillClass,
