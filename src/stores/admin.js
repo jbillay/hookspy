@@ -65,7 +65,7 @@ export const useAdminStore = defineStore('admin', () => {
   async function changePlan(id, plan) {
     loading.value = true
     try {
-      const res = await fetch(`/api/admin/users/${id}/plan`, {
+      const res = await fetch(`/api/admin/users/${id}`, {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({ plan }),
@@ -91,7 +91,7 @@ export const useAdminStore = defineStore('admin', () => {
   async function changeStatus(id, status) {
     loading.value = true
     try {
-      const res = await fetch(`/api/admin/users/${id}/status`, {
+      const res = await fetch(`/api/admin/users/${id}`, {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({ status }),

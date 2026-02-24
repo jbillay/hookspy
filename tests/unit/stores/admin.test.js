@@ -89,7 +89,7 @@ describe('admin store', () => {
     const result = await store.changePlan('1', 'pro')
 
     expect(global.fetch).toHaveBeenCalledWith(
-      '/api/admin/users/1/plan',
+      '/api/admin/users/1',
       expect.objectContaining({ method: 'PUT' }),
     )
     expect(result.data.plan).toBe('pro')
@@ -106,7 +106,7 @@ describe('admin store', () => {
     const result = await store.changeStatus('1', 'disabled')
 
     expect(global.fetch).toHaveBeenCalledWith(
-      '/api/admin/users/1/status',
+      '/api/admin/users/1',
       expect.objectContaining({ method: 'PUT' }),
     )
     expect(result.data.status).toBe('disabled')
