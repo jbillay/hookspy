@@ -125,6 +125,53 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function changePassword(currentPassword, newPassword) {
+    const { client } = useSupabase()
+    const email = user.value?.email
+    if (!email) return { error: { message: 'Not authenticated' } }
+
+    // Verify current password by re-authenticating
+    const { error: signInError } = await client.auth.signInWithPassword({
+      email,
+      password: currentPassword,
+    })
+    if (signInError)
+      return { error: { message: 'Current password is incorrect' } }
+
+    // Update to new password
+    const { data, error } = await client.auth.updateUser({
+      password: newPassword,
+    })
+    if (error) return { error }
+    return { data }
+  }
+
+  async function deleteAccount() {
+    if (!session.value?.access_token)
+      return { error: { message: 'Not authenticated' } }
+
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.value.access_token}`,
+        },
+      })
+
+      if (!res.ok) {
+        const body = await res.json()
+        return { error: { message: body.error || 'Failed to delete account' } }
+      }
+
+      user.value = null
+      session.value = null
+      profile.value = null
+      return { data: { success: true } }
+    } catch {
+      return { error: { message: 'Failed to delete account' } }
+    }
+  }
+
   function destroy() {
     if (authSubscription) {
       authSubscription.unsubscribe()
@@ -147,6 +194,8 @@ export const useAuthStore = defineStore('auth', () => {
     signUp,
     signIn,
     signOut,
+    changePassword,
+    deleteAccount,
     destroy,
   }
 })

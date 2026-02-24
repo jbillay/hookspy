@@ -20,6 +20,7 @@ vi.mock('../../../src/composables/use-supabase.js', () => ({
           mockAuthMethods.signInWithPassword(...args),
         ),
         signOut: vi.fn(() => mockAuthMethods.signOut()),
+        updateUser: vi.fn((...args) => mockAuthMethods.updateUser(...args)),
       },
     },
   }),
@@ -43,6 +44,9 @@ describe('Auth Store', () => {
         }),
       ),
       signOut: vi.fn(() => Promise.resolve({ error: null })),
+      updateUser: vi.fn(() =>
+        Promise.resolve({ data: { user: mockUser }, error: null }),
+      ),
     }
   })
 
@@ -197,6 +201,108 @@ describe('Auth Store', () => {
 
       await promise
       expect(store.loading).toBe(false)
+    })
+  })
+
+  describe('changePassword', () => {
+    it('changes password when current password is correct', async () => {
+      const store = useAuthStore()
+      store.user = mockUser
+      store.session = mockSession
+
+      const result = await store.changePassword('oldpass', 'newpass123')
+
+      expect(mockAuthMethods.signInWithPassword).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'oldpass',
+      })
+      expect(mockAuthMethods.updateUser).toHaveBeenCalledWith({
+        password: 'newpass123',
+      })
+      expect(result.data).toBeDefined()
+      expect(result.error).toBeUndefined()
+    })
+
+    it('returns error when current password is wrong', async () => {
+      mockAuthMethods.signInWithPassword.mockResolvedValueOnce({
+        data: { user: null, session: null },
+        error: { message: 'Invalid login credentials' },
+      })
+
+      const store = useAuthStore()
+      store.user = mockUser
+      store.session = mockSession
+
+      const result = await store.changePassword('wrongpass', 'newpass123')
+
+      expect(result.error.message).toBe('Current password is incorrect')
+      expect(mockAuthMethods.updateUser).not.toHaveBeenCalled()
+    })
+
+    it('returns error when not authenticated', async () => {
+      const store = useAuthStore()
+
+      const result = await store.changePassword('old', 'new')
+
+      expect(result.error.message).toBe('Not authenticated')
+    })
+  })
+
+  describe('deleteAccount', () => {
+    it('deletes account and clears state on success', async () => {
+      globalThis.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ success: true }),
+        }),
+      )
+
+      const store = useAuthStore()
+      store.user = mockUser
+      store.session = mockSession
+      store.profile = { id: 'user-123' }
+
+      const result = await store.deleteAccount()
+
+      expect(globalThis.fetch).toHaveBeenCalledWith('/api/profile', {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer token-abc' },
+      })
+      expect(result.data).toEqual({ success: true })
+      expect(store.user).toBeNull()
+      expect(store.session).toBeNull()
+      expect(store.profile).toBeNull()
+    })
+
+    it('returns error on failure', async () => {
+      globalThis.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: false,
+          json: () =>
+            Promise.resolve({
+              error: 'Cannot delete the last active admin account',
+            }),
+        }),
+      )
+
+      const store = useAuthStore()
+      store.user = mockUser
+      store.session = mockSession
+
+      const result = await store.deleteAccount()
+
+      expect(result.error.message).toBe(
+        'Cannot delete the last active admin account',
+      )
+      expect(store.user).toEqual(mockUser)
+    })
+
+    it('returns error when not authenticated', async () => {
+      const store = useAuthStore()
+
+      const result = await store.deleteAccount()
+
+      expect(result.error.message).toBe('Not authenticated')
     })
   })
 })

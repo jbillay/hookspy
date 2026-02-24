@@ -87,5 +87,36 @@ export default async function handler(req, res) {
     return res.status(200).json({ data })
   }
 
+  if (req.method === 'DELETE') {
+    // Check if user is an admin — if so, ensure they're not the last one
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (userProfile?.role === 'admin') {
+      const { count: adminCount } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('role', 'admin')
+        .eq('status', 'active')
+
+      if (adminCount <= 1) {
+        return res.status(400).json({
+          error: 'Cannot delete the last active admin account',
+        })
+      }
+    }
+
+    // Delete the user (cascades to profiles, endpoints, webhook_logs)
+    const { error } = await supabase.auth.admin.deleteUser(user.id)
+    if (error) {
+      return res.status(500).json({ error: error.message })
+    }
+
+    return res.status(200).json({ success: true })
+  }
+
   return res.status(405).json({ error: 'Method not allowed' })
 }

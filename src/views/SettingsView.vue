@@ -1,8 +1,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import InputText from 'primevue/inputtext'
+import Password from 'primevue/password'
 import Button from 'primevue/button'
 import Card from 'primevue/card'
+import Dialog from 'primevue/dialog'
 import { useToast } from 'primevue/usetoast'
 import PlanBadge from '../components/settings/PlanBadge.vue'
 import PlanUsage from '../components/settings/PlanUsage.vue'
@@ -13,9 +16,43 @@ import { useUserPlan } from '../composables/use-user-plan.js'
 const auth = useAuth()
 const { plan, isFree, limits } = useUserPlan()
 const toast = useToast()
+const router = useRouter()
 
 const displayName = ref('')
 const saving = ref(false)
+
+// Password change
+const currentPassword = ref('')
+const newPassword = ref('')
+const confirmPassword = ref('')
+const changingPassword = ref(false)
+
+const passwordError = computed(() => {
+  if (newPassword.value && newPassword.value.length < 8) {
+    return 'New password must be at least 8 characters'
+  }
+  if (confirmPassword.value && newPassword.value !== confirmPassword.value) {
+    return 'Passwords do not match'
+  }
+  return null
+})
+
+const canChangePassword = computed(
+  () =>
+    currentPassword.value &&
+    newPassword.value.length >= 8 &&
+    newPassword.value === confirmPassword.value &&
+    !changingPassword.value,
+)
+
+// Account deletion
+const showDeleteDialog = ref(false)
+const deleteConfirmEmail = ref('')
+const deleting = ref(false)
+
+const canDelete = computed(
+  () => deleteConfirmEmail.value === auth.user?.email && !deleting.value,
+)
 
 const endpointsUsed = computed(() => auth.profile?.usage?.endpoints_count || 0)
 const endpointsMax = computed(() => limits.value?.max_endpoints || 0)
@@ -55,6 +92,56 @@ async function saveDisplayName() {
     }
   } finally {
     saving.value = false
+  }
+}
+
+async function handleChangePassword() {
+  changingPassword.value = true
+  try {
+    const { error } = await auth.changePassword(
+      currentPassword.value,
+      newPassword.value,
+    )
+    if (error) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error.message || 'Failed to change password',
+        life: 5000,
+      })
+    } else {
+      currentPassword.value = ''
+      newPassword.value = ''
+      confirmPassword.value = ''
+      toast.add({
+        severity: 'success',
+        summary: 'Password Changed',
+        detail: 'Your password has been updated successfully',
+        life: 3000,
+      })
+    }
+  } finally {
+    changingPassword.value = false
+  }
+}
+
+async function handleDeleteAccount() {
+  deleting.value = true
+  try {
+    const { error } = await auth.deleteAccount()
+    if (error) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error.message || 'Failed to delete account',
+        life: 5000,
+      })
+    } else {
+      showDeleteDialog.value = false
+      router.push('/')
+    }
+  } finally {
+    deleting.value = false
   }
 }
 </script>
@@ -101,6 +188,63 @@ async function saveDisplayName() {
       </template>
     </Card>
 
+    <!-- Security Section -->
+    <Card class="mb-6">
+      <template #title>Security</template>
+      <template #content>
+        <div class="flex flex-col gap-4">
+          <div>
+            <label class="block text-sm font-medium text-neutral-600 mb-1"
+              >Current Password</label
+            >
+            <Password
+              v-model="currentPassword"
+              :feedback="false"
+              toggle-mask
+              class="w-full"
+              input-class="w-full"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-neutral-600 mb-1"
+              >New Password</label
+            >
+            <Password
+              v-model="newPassword"
+              :feedback="false"
+              toggle-mask
+              class="w-full"
+              input-class="w-full"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-neutral-600 mb-1"
+              >Confirm New Password</label
+            >
+            <Password
+              v-model="confirmPassword"
+              :feedback="false"
+              toggle-mask
+              class="w-full"
+              input-class="w-full"
+            />
+          </div>
+          <p v-if="passwordError" class="text-sm text-red-600">
+            {{ passwordError }}
+          </p>
+          <div>
+            <Button
+              label="Change Password"
+              :loading="changingPassword"
+              :disabled="!canChangePassword"
+              size="small"
+              @click="handleChangePassword"
+            />
+          </div>
+        </div>
+      </template>
+    </Card>
+
     <!-- Plan Section -->
     <Card class="mb-6">
       <template #title>
@@ -139,5 +283,62 @@ async function saveDisplayName() {
         <PlanComparison />
       </template>
     </Card>
+
+    <!-- Danger Zone -->
+    <Card class="mb-6 border border-red-300">
+      <template #title>
+        <span class="text-red-700">Danger Zone</span>
+      </template>
+      <template #content>
+        <p class="text-sm text-neutral-600 mb-4">
+          Permanently delete your account, all endpoints, and webhook logs. This
+          action cannot be undone.
+        </p>
+        <Button
+          label="Delete Account"
+          severity="danger"
+          size="small"
+          @click="showDeleteDialog = true"
+        />
+      </template>
+    </Card>
+
+    <!-- Delete Confirmation Dialog -->
+    <Dialog
+      v-model:visible="showDeleteDialog"
+      header="Delete Account"
+      :modal="true"
+      :style="{ width: '28rem' }"
+    >
+      <p class="text-sm text-neutral-600 mb-4">
+        This will permanently delete your account, all endpoints, and all
+        webhook logs. This action cannot be undone.
+      </p>
+      <p class="text-sm font-medium text-neutral-700 mb-2">
+        Type
+        <strong>{{ auth.user?.email }}</strong> to confirm:
+      </p>
+      <InputText
+        v-model="deleteConfirmEmail"
+        class="w-full mb-4"
+        placeholder="Enter your email"
+      />
+      <div class="flex justify-end gap-2">
+        <Button
+          label="Cancel"
+          severity="secondary"
+          size="small"
+          @click="showDeleteDialog = false"
+        />
+        <Button
+          label="Delete Account"
+          severity="danger"
+          size="small"
+          :loading="deleting"
+          :disabled="!canDelete"
+          @click="handleDeleteAccount"
+        />
+      </div>
+    </Dialog>
   </div>
 </template>
