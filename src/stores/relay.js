@@ -77,6 +77,7 @@ export const useRelayStore = defineStore('relay', () => {
 
     const ids = activeEndpoints.map((e) => e.id)
     const filterStr = `endpoint_id=in.(${ids.join(',')})`
+    console.log('[relay-worker] subscribing with filter:', filterStr)
     const { client } = useSupabase()
 
     const ch = client
@@ -90,12 +91,19 @@ export const useRelayStore = defineStore('relay', () => {
           filter: filterStr,
         },
         (payload) => {
+          console.log(
+            '[relay-worker] received event:',
+            payload.eventType,
+            payload.new?.id,
+            payload.new?.status,
+          )
           if (payload.new && payload.new.status === 'pending') {
             forwardWebhook(payload.new)
           }
         },
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
+        console.log('[relay-worker] channel status:', status, err || '')
         if (status === 'SUBSCRIBED') {
           relayStatus.value = 'active'
           reconnectAttempts.value = 0

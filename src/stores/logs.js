@@ -193,6 +193,7 @@ export const useLogsStore = defineStore('logs', () => {
     if (ids.length === 0) return
 
     const filterStr = `endpoint_id=in.(${ids.join(',')})`
+    console.log('[log-viewer] subscribing with filter:', filterStr)
     const { client } = useSupabase()
 
     const ch = client
@@ -206,6 +207,11 @@ export const useLogsStore = defineStore('logs', () => {
           filter: filterStr,
         },
         (payload) => {
+          console.log(
+            '[log-viewer] INSERT event:',
+            payload.new?.id,
+            payload.new?.status,
+          )
           totalCount.value++
           if (currentPage.value === 1 && matchesFilters(payload.new)) {
             const endpointsStore = useEndpointsStore()
@@ -229,13 +235,20 @@ export const useLogsStore = defineStore('logs', () => {
           filter: filterStr,
         },
         (payload) => {
+          console.log(
+            '[log-viewer] UPDATE event:',
+            payload.new?.id,
+            payload.new?.status,
+          )
           const idx = logs.value.findIndex((l) => l.id === payload.new.id)
           if (idx !== -1) {
             logs.value[idx] = { ...logs.value[idx], ...payload.new }
           }
         },
       )
-      .subscribe()
+      .subscribe((status, err) => {
+        console.log('[log-viewer] channel status:', status, err || '')
+      })
 
     channel.value = ch
   }
