@@ -101,9 +101,9 @@ function setupSupabaseMocks({
     is_active: true,
     timeout_seconds: 30,
     user_id: 'user-1',
-    profiles: { plan: 'free', status: 'active' },
   },
   endpointError = null,
+  ownerProfile = { plan: 'free', status: 'active' },
   insertResult = {
     id: 'log-1',
     endpoint_id: 'ep-1',
@@ -132,6 +132,18 @@ function setupSupabaseMocks({
             single: vi.fn().mockResolvedValue({
               data: endpoint,
               error: endpointError,
+            }),
+          }),
+        }),
+      }
+    }
+    if (table === 'profiles') {
+      return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: ownerProfile,
+              error: null,
             }),
           }),
         }),

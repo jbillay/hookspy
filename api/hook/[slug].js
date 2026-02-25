@@ -51,7 +51,7 @@ export default async function handler(req, res) {
   // Look up endpoint by slug
   const { data: endpoint, error: epError } = await supabase
     .from('endpoints')
-    .select('*, profiles:user_id(plan, status)')
+    .select('*')
     .eq('slug', slug)
     .eq('is_active', true)
     .single()
@@ -60,12 +60,19 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: 'Endpoint not found' })
   }
 
+  // Fetch owner profile separately (avoids indirect PostgREST join)
+  const { data: ownerProfile } = await supabase
+    .from('profiles')
+    .select('plan, status')
+    .eq('id', endpoint.user_id)
+    .single()
+
   // Check owner status
-  if (endpoint.profiles?.status === 'disabled') {
+  if (ownerProfile?.status === 'disabled') {
     return res.status(403).json({ error: 'Endpoint owner account is disabled' })
   }
 
-  const ownerPlan = endpoint.profiles?.plan || 'free'
+  const ownerPlan = ownerProfile?.plan || 'free'
   const limits = await getPlanLimits(ownerPlan)
 
   if (!limits) {
