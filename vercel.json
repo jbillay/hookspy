@@ -37,6 +37,18 @@
       "destination": "/api/hook/:slug?_subpath=/:subpath"
     },
     {
+      "source": "/api/admin/stats",
+      "destination": "/api/admin?_route=stats"
+    },
+    {
+      "source": "/api/admin/audit-log",
+      "destination": "/api/admin?_route=audit-log"
+    },
+    {
+      "source": "/api/admin/users",
+      "destination": "/api/admin?_route=users"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
