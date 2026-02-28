@@ -67,10 +67,10 @@ export const useRelayStore = defineStore('relay', () => {
   const transport = useRealtimeTransport()
 
   const relayStatus = computed(() => {
-    if (!subscribed.value) return 'inactive'
     const endpointsStore = useEndpointsStore()
     const hasActive = endpointsStore.endpoints.some((e) => e.is_active)
-    if (!hasActive) return 'no-endpoints'
+    if (!hasActive && endpointsStore.endpoints.length > 0) return 'no-endpoints'
+    if (!subscribed.value) return 'inactive'
     if (transport.isConnected.value) return 'active'
     return 'inactive'
   })

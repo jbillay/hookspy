@@ -2,18 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useLogsStore } from '../../../src/stores/logs.js'
 
-const mockChannel = {
-  on: vi.fn().mockReturnThis(),
-  subscribe: vi.fn().mockReturnThis(),
+let lastSubscribeCallback = null
+
+const mockTransport = {
+  subscribe: vi.fn((name, config, callback) => {
+    lastSubscribeCallback = callback
+  }),
+  unsubscribe: vi.fn(),
+  seedSeenIds: vi.fn(),
+  updateSubscription: vi.fn(),
 }
 
-const mockClient = {
-  channel: vi.fn(() => mockChannel),
-  removeChannel: vi.fn(),
-}
-
-vi.mock('../../../src/composables/use-supabase.js', () => ({
-  useSupabase: () => ({ client: mockClient }),
+vi.mock('../../../src/composables/use-realtime-transport.js', () => ({
+  useRealtimeTransport: () => mockTransport,
 }))
 
 vi.mock('../../../src/stores/auth.js', () => ({
@@ -50,10 +51,13 @@ describe('Logs Store', () => {
     setActivePinia(createPinia())
     vi.restoreAllMocks()
     global.fetch = vi.fn()
-    mockClient.removeChannel.mockClear()
-    mockClient.channel.mockClear()
-    mockChannel.on.mockClear().mockReturnThis()
-    mockChannel.subscribe.mockClear().mockReturnThis()
+    lastSubscribeCallback = null
+    mockTransport.subscribe.mockClear()
+    mockTransport.unsubscribe.mockClear()
+    mockTransport.seedSeenIds.mockClear()
+    mockTransport.subscribe.mockImplementation((name, config, callback) => {
+      lastSubscribeCallback = callback
+    })
   })
 
   describe('initial state', () => {
@@ -320,25 +324,16 @@ describe('Logs Store', () => {
   })
 
   describe('startSubscription', () => {
-    it('creates Realtime channel with correct filter', () => {
+    it('subscribes via transport composable with correct config', () => {
       const store = useLogsStore()
       store.startSubscription()
 
-      expect(mockClient.channel).toHaveBeenCalledWith('log-viewer')
-      expect(mockChannel.on).toHaveBeenCalledWith(
-        'postgres_changes',
+      expect(mockTransport.subscribe).toHaveBeenCalledWith(
+        'log-viewer',
         expect.objectContaining({
-          event: 'INSERT',
-          schema: 'public',
           table: 'webhook_logs',
-          filter: 'endpoint_id=in.(ep-1,ep-2)',
-        }),
-        expect.any(Function),
-      )
-      expect(mockChannel.on).toHaveBeenCalledWith(
-        'postgres_changes',
-        expect.objectContaining({
-          event: 'UPDATE',
+          events: ['INSERT', 'UPDATE'],
+          endpointIds: ['ep-1', 'ep-2'],
         }),
         expect.any(Function),
       )
@@ -349,10 +344,10 @@ describe('Logs Store', () => {
       store.endpointFilter = 'ep-1'
       store.startSubscription()
 
-      expect(mockChannel.on).toHaveBeenCalledWith(
-        'postgres_changes',
+      expect(mockTransport.subscribe).toHaveBeenCalledWith(
+        'log-viewer',
         expect.objectContaining({
-          filter: 'endpoint_id=in.(ep-1)',
+          endpointIds: ['ep-1'],
         }),
         expect.any(Function),
       )
@@ -360,19 +355,11 @@ describe('Logs Store', () => {
   })
 
   describe('stopSubscription', () => {
-    it('removes channel when one exists', () => {
-      const store = useLogsStore()
-      store.startSubscription()
-      store.stopSubscription()
-
-      expect(mockClient.removeChannel).toHaveBeenCalled()
-    })
-
-    it('does nothing when no channel exists', () => {
+    it('unsubscribes via transport composable', () => {
       const store = useLogsStore()
       store.stopSubscription()
 
-      expect(mockClient.removeChannel).not.toHaveBeenCalled()
+      expect(mockTransport.unsubscribe).toHaveBeenCalledWith('log-viewer')
     })
   })
 
@@ -382,11 +369,10 @@ describe('Logs Store', () => {
       store.methodFilter = ['DELETE']
       store.startSubscription()
 
-      const insertCb = mockChannel.on.mock.calls.find(
-        (c) => c[1].event === 'INSERT',
-      )[2]
-      insertCb({
-        new: { id: 'log-new', request_method: 'GET', status: 'pending' },
+      lastSubscribeCallback('INSERT', {
+        id: 'log-new',
+        request_method: 'GET',
+        status: 'pending',
       })
 
       expect(store.totalCount).toBe(1)
@@ -398,11 +384,10 @@ describe('Logs Store', () => {
       store.methodFilter = ['POST']
       store.startSubscription()
 
-      const insertCb = mockChannel.on.mock.calls.find(
-        (c) => c[1].event === 'INSERT',
-      )[2]
-      insertCb({
-        new: { id: 'log-new', request_method: 'POST', status: 'pending' },
+      lastSubscribeCallback('INSERT', {
+        id: 'log-new',
+        request_method: 'POST',
+        status: 'pending',
       })
 
       expect(store.logs).toHaveLength(1)
@@ -414,11 +399,10 @@ describe('Logs Store', () => {
       store.statusFilter = ['responded']
       store.startSubscription()
 
-      const insertCb = mockChannel.on.mock.calls.find(
-        (c) => c[1].event === 'INSERT',
-      )[2]
-      insertCb({
-        new: { id: 'log-new', request_method: 'GET', status: 'pending' },
+      lastSubscribeCallback('INSERT', {
+        id: 'log-new',
+        request_method: 'GET',
+        status: 'pending',
       })
 
       expect(store.totalCount).toBe(1)
@@ -430,27 +414,19 @@ describe('Logs Store', () => {
       store.searchQuery = 'hello'
       store.startSubscription()
 
-      const insertCb = mockChannel.on.mock.calls.find(
-        (c) => c[1].event === 'INSERT',
-      )[2]
-
-      insertCb({
-        new: {
-          id: 'log-match',
-          request_method: 'POST',
-          status: 'pending',
-          request_body: 'Hello World',
-        },
+      lastSubscribeCallback('INSERT', {
+        id: 'log-match',
+        request_method: 'POST',
+        status: 'pending',
+        request_body: 'Hello World',
       })
       expect(store.logs).toHaveLength(1)
 
-      insertCb({
-        new: {
-          id: 'log-no-match',
-          request_method: 'POST',
-          status: 'pending',
-          request_body: 'Goodbye',
-        },
+      lastSubscribeCallback('INSERT', {
+        id: 'log-no-match',
+        request_method: 'POST',
+        status: 'pending',
+        request_body: 'Goodbye',
       })
       expect(store.logs).toHaveLength(1) // second log not added
     })

@@ -1,15 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { ref } from 'vue'
 import { setActivePinia, createPinia } from 'pinia'
 import { useRelayStore } from '../../../src/stores/relay.js'
 
-const mockChannel = {
-  on: vi.fn().mockReturnThis(),
-  subscribe: vi.fn().mockReturnThis(),
+const mockTransport = {
+  transportMode: ref('connecting'),
+  isConnected: ref(false),
+  subscribe: vi.fn(),
+  unsubscribe: vi.fn(),
+  updateSubscription: vi.fn(),
+  seedSeenIds: vi.fn(),
 }
 
+vi.mock('../../../src/composables/use-realtime-transport.js', () => ({
+  useRealtimeTransport: () => mockTransport,
+}))
+
 const mockClient = {
-  channel: vi.fn(() => mockChannel),
-  removeChannel: vi.fn(),
   from: vi.fn(() => ({
     update: vi.fn(() => ({
       eq: vi.fn(() => ({
@@ -250,7 +257,6 @@ describe('Relay Store', () => {
   describe('stopRelay', () => {
     it('sets status to inactive', async () => {
       const store = useRelayStore()
-      store.relayStatus = 'active'
       await store.stopRelay()
       expect(store.relayStatus).toBe('inactive')
     })

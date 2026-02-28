@@ -6,6 +6,8 @@ import ToastService from 'primevue/toastservice'
 import ConfirmationService from 'primevue/confirmationservice'
 import 'primeicons/primeicons.css'
 import './assets/main.css'
+import { inject as injectAnalytics } from '@vercel/analytics'
+import { injectSpeedInsights } from '@vercel/speed-insights'
 import App from './App.vue'
 import router from './router'
 import { useAuthStore } from './stores/auth.js'
@@ -26,6 +28,9 @@ app.use(PrimeVue, {
 })
 app.use(ToastService)
 app.use(ConfirmationService)
+
+injectAnalytics()
+injectSpeedInsights()
 
 // Apply dark mode before mount to prevent flash
 if (localStorage.getItem('hs-dark-mode') === 'true') {
