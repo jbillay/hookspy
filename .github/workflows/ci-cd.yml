@@ -56,6 +56,9 @@ jobs:
       - name: Pull Vercel configuration
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Configure npm for legacy peer deps
+        run: npm config set legacy-peer-deps true
+
       - name: Build
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
