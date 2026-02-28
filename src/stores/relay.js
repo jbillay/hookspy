@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useSupabase } from '../composables/use-supabase.js'
+import { useRealtimeTransport } from '../composables/use-realtime-transport.js'
 import { useAuthStore } from './auth.js'
 import { useEndpointsStore } from './endpoints.js'
 
@@ -59,100 +60,75 @@ function classifyError(err, url) {
 }
 
 export const useRelayStore = defineStore('relay', () => {
-  const relayStatus = ref('inactive')
   const forwardingCount = ref(0)
   const lastError = ref(null)
-  const channel = ref(null)
-  const reconnectAttempts = ref(0)
-  const reconnectTimer = ref(null)
+  const subscribed = ref(false)
+
+  const transport = useRealtimeTransport()
+
+  const relayStatus = computed(() => {
+    if (!subscribed.value) return 'inactive'
+    const endpointsStore = useEndpointsStore()
+    const hasActive = endpointsStore.endpoints.some((e) => e.is_active)
+    if (!hasActive) return 'no-endpoints'
+    if (transport.isConnected.value) return 'active'
+    return 'inactive'
+  })
 
   async function startRelay() {
     const endpointsStore = useEndpointsStore()
     const activeEndpoints = endpointsStore.endpoints.filter((e) => e.is_active)
 
     if (activeEndpoints.length === 0) {
-      relayStatus.value = 'no-endpoints'
+      subscribed.value = false
       return
     }
 
     const ids = activeEndpoints.map((e) => e.id)
-    const filterStr = `endpoint_id=in.(${ids.join(',')})`
-    console.log('[relay-worker] subscribing with filter:', filterStr)
-    const { client } = useSupabase()
+    console.log('[relay-worker] subscribing with endpoints:', ids.length)
 
-    const ch = client
-      .channel('relay-worker')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'webhook_logs',
-          filter: filterStr,
-        },
-        (payload) => {
-          console.log(
-            '[relay-worker] received event:',
-            payload.eventType,
-            payload.new?.id,
-            payload.new?.status,
-          )
-          if (payload.new && payload.new.status === 'pending') {
-            forwardWebhook(payload.new)
-          }
-        },
-      )
-      .subscribe((status, err) => {
-        console.log('[relay-worker] channel status:', status, err || '')
-        if (status === 'SUBSCRIBED') {
-          relayStatus.value = 'active'
-          reconnectAttempts.value = 0
-          if (reconnectTimer.value) {
-            clearTimeout(reconnectTimer.value)
-            reconnectTimer.value = null
-          }
+    transport.subscribe(
+      'relay-worker',
+      {
+        table: 'webhook_logs',
+        events: ['INSERT'],
+        endpointIds: ids,
+      },
+      (eventType, row) => {
+        if (row && row.status === 'pending') {
+          forwardWebhook(row)
         }
-        if (
-          status === 'CHANNEL_ERROR' ||
-          status === 'TIMED_OUT' ||
-          status === 'CLOSED'
-        ) {
-          relayStatus.value = 'inactive'
-          scheduleReconnect()
-        }
-      })
+      },
+    )
 
-    channel.value = ch
-  }
-
-  function scheduleReconnect() {
-    if (reconnectTimer.value) return
-    const delay = Math.min(1000 * 2 ** reconnectAttempts.value, 30000)
-    reconnectAttempts.value++
-    reconnectTimer.value = setTimeout(async () => {
-      reconnectTimer.value = null
-      await stopRelay()
-      await startRelay()
-    }, delay)
+    subscribed.value = true
   }
 
   async function stopRelay() {
-    if (reconnectTimer.value) {
-      clearTimeout(reconnectTimer.value)
-      reconnectTimer.value = null
-    }
-    if (channel.value) {
-      const { client } = useSupabase()
-      await client.removeChannel(channel.value)
-      channel.value = null
-    }
-    relayStatus.value = 'inactive'
+    transport.unsubscribe('relay-worker')
+    subscribed.value = false
   }
 
   async function updateSubscription() {
-    await stopRelay()
-    reconnectAttempts.value = 0
-    await startRelay()
+    const endpointsStore = useEndpointsStore()
+    const activeEndpoints = endpointsStore.endpoints.filter((e) => e.is_active)
+
+    if (activeEndpoints.length === 0) {
+      await stopRelay()
+      return
+    }
+
+    const ids = activeEndpoints.map((e) => e.id)
+
+    if (subscribed.value) {
+      transport.updateSubscription('relay-worker', {
+        table: 'webhook_logs',
+        events: ['INSERT'],
+        endpointIds: ids,
+      })
+    } else {
+      await startRelay()
+    }
   }
 
   async function forwardWebhook(log) {
@@ -183,7 +159,6 @@ export const useRelayStore = defineStore('relay', () => {
     // Step 3: Build target URL and headers (append sub-path if present)
     let url = buildTargetUrl(endpoint)
     if (log.request_subpath) {
-      // Remove trailing slash from base URL to avoid double slashes
       url = url.replace(/\/$/, '') + log.request_subpath
     }
     const filteredHeaders = filterHeaders(log.request_headers)

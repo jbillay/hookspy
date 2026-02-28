@@ -1,12 +1,13 @@
 import { ref, computed, reactive } from 'vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useEndpointsStore } from '../stores/endpoints.js'
-import { useSupabase } from './use-supabase.js'
+import { useRealtimeTransport } from './use-realtime-transport.js'
 
 const recentLogs = ref([])
 const requestCount24h = ref(0)
 const loadingStats = ref(false)
-const channel = ref(null)
+
+const transport = useRealtimeTransport()
 
 export function formatTimeAgo(timestamp) {
   if (!timestamp) return '—'
@@ -75,61 +76,46 @@ export function useDashboard() {
     const ids = endpointsStore.endpoints.map((e) => e.id)
     if (ids.length === 0) return
 
-    const filterStr = `endpoint_id=in.(${ids.join(',')})`
-    const { client } = useSupabase()
+    // Seed dedup with already-loaded log IDs
+    const loadedIds = recentLogs.value.map((l) => l.id)
+    if (loadedIds.length > 0) {
+      transport.seedSeenIds(loadedIds)
+    }
 
-    const ch = client
-      .channel('dashboard-activity')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'webhook_logs',
-          filter: filterStr,
-        },
-        (payload) => {
+    transport.subscribe(
+      'dashboard-activity',
+      {
+        table: 'webhook_logs',
+        events: ['INSERT', 'UPDATE'],
+        endpointIds: ids,
+      },
+      (eventType, row) => {
+        if (eventType === 'INSERT') {
           const ep = endpointsStore.endpoints.find(
-            (e) => e.id === payload.new.endpoint_id,
+            (e) => e.id === row.endpoint_id,
           )
           const enriched = {
-            ...payload.new,
+            ...row,
             endpoint_name: ep?.name || 'Unknown',
             endpoint_slug: ep?.slug,
           }
           recentLogs.value = [enriched, ...recentLogs.value].slice(0, 10)
           requestCount24h.value++
-        },
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'webhook_logs',
-          filter: filterStr,
-        },
-        (payload) => {
-          const idx = recentLogs.value.findIndex((l) => l.id === payload.new.id)
+        } else if (eventType === 'UPDATE') {
+          const idx = recentLogs.value.findIndex((l) => l.id === row.id)
           if (idx !== -1) {
             recentLogs.value[idx] = {
               ...recentLogs.value[idx],
-              ...payload.new,
+              ...row,
             }
           }
-        },
-      )
-      .subscribe()
-
-    channel.value = ch
+        }
+      },
+    )
   }
 
   function stopSubscription() {
-    if (channel.value) {
-      const { client } = useSupabase()
-      client.removeChannel(channel.value)
-      channel.value = null
-    }
+    transport.unsubscribe('dashboard-activity')
   }
 
   return reactive({

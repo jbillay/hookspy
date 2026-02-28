@@ -3,9 +3,11 @@ import { computed } from 'vue'
 import Skeleton from 'primevue/skeleton'
 import { useRelay } from '../../composables/use-relay.js'
 import { useEndpoints } from '../../composables/use-endpoints.js'
+import { useRealtimeTransport } from '../../composables/use-realtime-transport.js'
 
 const relay = useRelay()
 const endpoints = useEndpoints()
+const transport = useRealtimeTransport()
 
 const statusConfig = computed(() => {
   switch (relay.relayStatus) {
@@ -29,6 +31,33 @@ const statusConfig = computed(() => {
       }
   }
 })
+
+const transportIndicator = computed(() => {
+  switch (transport.transportMode.value) {
+    case 'ws':
+      return {
+        dotClass: 'status-dot bg-green-500',
+        label: 'Live',
+        pillClass: 'bg-green-50 text-green-700 border-green-200',
+        tooltip: null,
+      }
+    case 'poll':
+      return {
+        dotClass: 'status-dot bg-amber-500',
+        label: 'Polling (2s)',
+        pillClass: 'bg-amber-50 text-amber-700 border-amber-200',
+        tooltip:
+          'WebSocket unavailable. Using HTTP polling as fallback. Updates may be slightly delayed.',
+      }
+    default:
+      return {
+        dotClass: 'status-dot bg-gray-400',
+        label: 'Connecting...',
+        pillClass: 'bg-gray-50 text-gray-600 border-gray-200',
+        tooltip: null,
+      }
+  }
+})
 </script>
 
 <template>
@@ -38,14 +67,29 @@ const statusConfig = computed(() => {
     height="1.5rem"
     border-radius="9999px"
   />
-  <div
-    v-else
-    :class="[
-      'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border',
-      statusConfig.pillClass,
-    ]"
-  >
-    <span :class="statusConfig.dotClass" />
-    <span>{{ statusConfig.label }}</span>
+  <div v-else class="inline-flex items-center gap-2">
+    <div
+      :class="[
+        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border',
+        statusConfig.pillClass,
+      ]"
+    >
+      <span :class="statusConfig.dotClass" />
+      <span>{{ statusConfig.label }}</span>
+    </div>
+    <div
+      v-if="relay.relayStatus === 'active'"
+      v-tooltip.bottom="transportIndicator.tooltip"
+      :class="[
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border',
+        transportIndicator.pillClass,
+      ]"
+    >
+      <span
+        :class="transportIndicator.dotClass"
+        style="width: 6px; height: 6px"
+      />
+      <span>{{ transportIndicator.label }}</span>
+    </div>
   </div>
 </template>

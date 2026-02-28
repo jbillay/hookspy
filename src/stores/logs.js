@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAuthStore } from './auth.js'
 import { useEndpointsStore } from './endpoints.js'
-import { useSupabase } from '../composables/use-supabase.js'
+import { useRealtimeTransport } from '../composables/use-realtime-transport.js'
 
 export const useLogsStore = defineStore('logs', () => {
   const logs = ref([])
@@ -12,7 +12,8 @@ export const useLogsStore = defineStore('logs', () => {
   const currentPage = ref(1)
   const pageSize = ref(50)
   const endpointFilter = ref(null)
-  const channel = ref(null)
+
+  const transport = useRealtimeTransport()
 
   // Filter state
   const methodFilter = ref([])
@@ -192,73 +193,45 @@ export const useLogsStore = defineStore('logs', () => {
 
     if (ids.length === 0) return
 
-    const filterStr = `endpoint_id=in.(${ids.join(',')})`
-    console.log('[log-viewer] subscribing with filter:', filterStr)
-    const { client } = useSupabase()
+    // Seed dedup with already-loaded log IDs
+    const loadedIds = logs.value.map((l) => l.id)
+    if (loadedIds.length > 0) {
+      transport.seedSeenIds(loadedIds)
+    }
 
-    const ch = client
-      .channel('log-viewer')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'webhook_logs',
-          filter: filterStr,
-        },
-        (payload) => {
-          console.log(
-            '[log-viewer] INSERT event:',
-            payload.new?.id,
-            payload.new?.status,
-          )
+    transport.subscribe(
+      'log-viewer',
+      {
+        table: 'webhook_logs',
+        events: ['INSERT', 'UPDATE'],
+        endpointIds: ids,
+      },
+      (eventType, row) => {
+        if (eventType === 'INSERT') {
           totalCount.value++
-          if (currentPage.value === 1 && matchesFilters(payload.new)) {
+          if (currentPage.value === 1 && matchesFilters(row)) {
             const endpointsStore = useEndpointsStore()
             const ep = endpointsStore.endpoints.find(
-              (e) => e.id === payload.new.endpoint_id,
+              (e) => e.id === row.endpoint_id,
             )
             logs.value.unshift({
-              ...payload.new,
+              ...row,
               endpoint_name: ep?.name || 'Unknown',
               endpoint_slug: ep?.slug,
             })
           }
-        },
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'webhook_logs',
-          filter: filterStr,
-        },
-        (payload) => {
-          console.log(
-            '[log-viewer] UPDATE event:',
-            payload.new?.id,
-            payload.new?.status,
-          )
-          const idx = logs.value.findIndex((l) => l.id === payload.new.id)
+        } else if (eventType === 'UPDATE') {
+          const idx = logs.value.findIndex((l) => l.id === row.id)
           if (idx !== -1) {
-            logs.value[idx] = { ...logs.value[idx], ...payload.new }
+            logs.value[idx] = { ...logs.value[idx], ...row }
           }
-        },
-      )
-      .subscribe((status, err) => {
-        console.log('[log-viewer] channel status:', status, err || '')
-      })
-
-    channel.value = ch
+        }
+      },
+    )
   }
 
   function stopSubscription() {
-    if (channel.value) {
-      const { client } = useSupabase()
-      client.removeChannel(channel.value)
-      channel.value = null
-    }
+    transport.unsubscribe('log-viewer')
   }
 
   return {
