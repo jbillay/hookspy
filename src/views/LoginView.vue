@@ -60,12 +60,7 @@ async function handleLogin() {
       <!-- Branding -->
       <div class="text-center mb-8">
         <div class="inline-flex items-center gap-2.5 mb-3">
-          <div
-            class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold shadow-sm"
-            style="background-color: var(--hs-brand)"
-          >
-            H
-          </div>
+          <img src="@/assets/logo.png" alt="HookSpy" class="w-10 h-10" />
           <span class="text-2xl font-bold text-neutral-900 font-display"
             >HookSpy</span
           >

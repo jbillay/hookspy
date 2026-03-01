@@ -56,12 +56,7 @@ function userInitial() {
             to="/dashboard"
             class="flex items-center gap-2 no-underline"
           >
-            <div
-              class="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold"
-              style="background-color: var(--hs-brand)"
-            >
-              H
-            </div>
+            <img src="@/assets/logo.png" alt="HookSpy" class="w-7 h-7" />
             <span class="text-lg font-bold text-neutral-900 font-display"
               >HookSpy</span
             >

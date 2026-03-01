@@ -86,12 +86,7 @@ function toggleDarkMode() {
     <nav class="landing-nav">
       <div class="landing-container flex items-center justify-between h-16">
         <div class="flex items-center gap-2.5">
-          <div
-            class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold"
-            style="background-color: var(--hs-brand)"
-          >
-            H
-          </div>
+          <img src="@/assets/logo.png" alt="HookSpy" class="w-8 h-8" />
           <span class="text-lg font-bold text-neutral-900 font-display"
             >HookSpy</span
           >
@@ -800,12 +795,7 @@ function toggleDarkMode() {
           class="flex flex-col sm:flex-row items-center justify-between gap-4"
         >
           <div class="flex items-center gap-2">
-            <div
-              class="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
-              style="background-color: var(--hs-brand)"
-            >
-              H
-            </div>
+            <img src="@/assets/logo.png" alt="HookSpy" class="w-6 h-6" />
             <span class="text-sm font-semibold text-neutral-600 font-display"
               >HookSpy</span
             >
