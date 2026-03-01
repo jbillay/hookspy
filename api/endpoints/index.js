@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
   const { user, profile, error: authError } = await verifyAuth(req)
   if (authError) {
-    const status = authError === 'account_disabled' ? 401 : 401
+    const status = authError === 'account_disabled' ? 403 : 401
     return res.status(status).json({ error: authError })
   }
 
@@ -27,7 +27,8 @@ export default async function handler(req, res) {
       .order('created_at', { ascending: false })
 
     if (error) {
-      return res.status(500).json({ error: error.message })
+      console.error('Endpoint list query failed:', error.message)
+      return res.status(500).json({ error: 'Internal server error' })
     }
 
     return res.status(200).json({ data })
@@ -74,7 +75,8 @@ export default async function handler(req, res) {
       .single()
 
     if (error) {
-      return res.status(500).json({ error: error.message })
+      console.error('Endpoint create failed:', error.message)
+      return res.status(500).json({ error: 'Internal server error' })
     }
 
     return res.status(201).json({ data })

@@ -64,11 +64,13 @@ export default async function handler(req, res) {
     }
 
     if (q) {
-      // Sanitize: strip PostgREST operators to prevent query injection
-      const sanitized = q.replace(/[,.*()\\]/g, '').trim()
-      if (sanitized) {
+      // Allowlist: keep only alphanumeric, spaces, hyphens, underscores, dots, colons, slashes
+      const allowlisted = q.replace(/[^a-zA-Z0-9 \-_.:/]/g, '').trim()
+      if (allowlisted) {
+        // Escape LIKE wildcards to prevent pattern injection
+        const escaped = allowlisted.replace(/%/g, '\\%').replace(/_/g, '\\_')
         query = query.or(
-          `request_body.ilike.%${sanitized}%,request_url.ilike.%${sanitized}%,response_body.ilike.%${sanitized}%,error_message.ilike.%${sanitized}%`,
+          `request_body.ilike.%${escaped}%,request_url.ilike.%${escaped}%,response_body.ilike.%${escaped}%,error_message.ilike.%${escaped}%`,
         )
       }
     }
@@ -85,7 +87,8 @@ export default async function handler(req, res) {
   const { data, error, count } = await query
 
   if (error) {
-    return res.status(500).json({ error: error.message })
+    console.error('Log list query failed:', error.message)
+    return res.status(500).json({ error: 'Internal server error' })
   }
 
   const mapped = (data || []).map((log) => ({

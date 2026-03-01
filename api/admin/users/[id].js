@@ -2,6 +2,7 @@ import { supabase } from '../../_lib/supabase.js'
 import { verifyAuth } from '../../_lib/auth.js'
 import { handleCors, setCorsHeaders } from '../../_lib/cors.js'
 import { requireAdmin, getPlanLimits } from '../../_lib/plans.js'
+import { isValidUUID } from '../../_lib/validation.js'
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return
@@ -18,6 +19,10 @@ export default async function handler(req, res) {
   }
 
   const { id } = req.query
+
+  if (!isValidUUID(id)) {
+    return res.status(400).json({ error: 'Invalid user ID format' })
+  }
 
   if (req.method === 'GET') {
     return handleGet(id, res)
@@ -118,7 +123,8 @@ async function handlePlanChange(id, user, body, res) {
     .single()
 
   if (updateError) {
-    return res.status(500).json({ error: updateError.message })
+    console.error('Admin plan change failed:', updateError.message)
+    return res.status(500).json({ error: 'Internal server error' })
   }
 
   // Handle downgrade: deactivate excess endpoints
@@ -225,7 +231,8 @@ async function handleStatusChange(id, user, body, res) {
     .single()
 
   if (updateError) {
-    return res.status(500).json({ error: updateError.message })
+    console.error('Admin status change failed:', updateError.message)
+    return res.status(500).json({ error: 'Internal server error' })
   }
 
   // Insert audit log entry

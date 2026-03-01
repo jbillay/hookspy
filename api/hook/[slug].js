@@ -167,16 +167,22 @@ export default async function handler(req, res) {
 
     if (current.status === 'responded') {
       if (current.response_headers) {
+        const BLOCKED_HEADERS = new Set([
+          'transfer-encoding',
+          'connection',
+          'content-length',
+          'set-cookie',
+          'access-control-allow-origin',
+          'access-control-allow-credentials',
+          'host',
+          'proxy-authorization',
+        ])
         for (const [key, value] of Object.entries(current.response_headers)) {
           const lowerKey = key.toLowerCase()
-          if (
-            lowerKey === 'transfer-encoding' ||
-            lowerKey === 'connection' ||
-            lowerKey === 'content-length'
-          ) {
-            continue
-          }
-          res.setHeader(key, value)
+          if (BLOCKED_HEADERS.has(lowerKey)) continue
+          // Block CRLF injection in header names and values
+          if (/[\r\n]/.test(key) || /[\r\n]/.test(String(value))) continue
+          res.setHeader(key, String(value))
         }
       }
       res.status(current.response_status || 200)

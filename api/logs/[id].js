@@ -1,6 +1,7 @@
 import { supabase } from '../_lib/supabase.js'
 import { verifyAuth } from '../_lib/auth.js'
 import { handleCors, setCorsHeaders } from '../_lib/cors.js'
+import { isValidUUID } from '../_lib/validation.js'
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return
@@ -16,6 +17,10 @@ export default async function handler(req, res) {
   }
 
   const { id } = req.query
+
+  if (!isValidUUID(id)) {
+    return res.status(400).json({ error: 'Invalid log ID format' })
+  }
 
   const { data: log, error } = await supabase
     .from('webhook_logs')

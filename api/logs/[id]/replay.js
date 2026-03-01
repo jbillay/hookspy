@@ -2,6 +2,7 @@ import { supabase } from '../../_lib/supabase.js'
 import { verifyAuth } from '../../_lib/auth.js'
 import { handleCors, setCorsHeaders } from '../../_lib/cors.js'
 import { getPlanLimits } from '../../_lib/plans.js'
+import { isValidUUID } from '../../_lib/validation.js'
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return
@@ -26,6 +27,10 @@ export default async function handler(req, res) {
   }
 
   const { id } = req.query
+
+  if (!isValidUUID(id)) {
+    return res.status(400).json({ error: 'Invalid log ID format' })
+  }
 
   // Fetch original log with ownership check
   const { data: log, error: logError } = await supabase
@@ -69,7 +74,8 @@ export default async function handler(req, res) {
     .single()
 
   if (insertError) {
-    return res.status(500).json({ error: insertError.message })
+    console.error('Replay insert failed:', insertError.message)
+    return res.status(500).json({ error: 'Internal server error' })
   }
 
   return res.status(201).json({ data: newLog })

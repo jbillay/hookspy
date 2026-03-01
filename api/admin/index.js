@@ -106,7 +106,8 @@ async function handleAuditLog(req, res) {
   const { data: entries, error, count } = await query
 
   if (error) {
-    return res.status(500).json({ error: error.message })
+    console.error('Audit log query failed:', error.message)
+    return res.status(500).json({ error: 'Internal server error' })
   }
 
   const adminIds = [...new Set(entries.map((e) => e.admin_id))]
@@ -185,7 +186,8 @@ async function handleUsers(req, res) {
   const { data: users, error, count } = await query
 
   if (error) {
-    return res.status(500).json({ error: error.message })
+    console.error('Admin users query failed:', error.message)
+    return res.status(500).json({ error: 'Internal server error' })
   }
 
   const userIds = users.map((u) => u.id)

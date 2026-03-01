@@ -93,9 +93,9 @@ export async function checkRateLimit(endpointSlug, plan) {
   )
 
   if (error) {
-    // On error, allow the request but log the issue
+    // Fail closed: deny the request on rate limit check failure
     console.error('Rate limit check failed:', error.message)
-    return { allowed: true, remaining: limits.requests_per_min, resetAt: null }
+    return { allowed: false, remaining: 0, resetAt: null }
   }
 
   // Calculate reset time (next minute boundary)

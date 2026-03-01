@@ -81,7 +81,8 @@ export default async function handler(req, res) {
       .single()
 
     if (error) {
-      return res.status(500).json({ error: error.message })
+      console.error('Profile update failed:', error.message)
+      return res.status(500).json({ error: 'Internal server error' })
     }
 
     return res.status(200).json({ data })
@@ -112,7 +113,8 @@ export default async function handler(req, res) {
     // Delete the user (cascades to profiles, endpoints, webhook_logs)
     const { error } = await supabase.auth.admin.deleteUser(user.id)
     if (error) {
-      return res.status(500).json({ error: error.message })
+      console.error('Account deletion failed:', error.message)
+      return res.status(500).json({ error: 'Internal server error' })
     }
 
     return res.status(200).json({ success: true })

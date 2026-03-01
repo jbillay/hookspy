@@ -31,7 +31,12 @@ async function handleLogin() {
   }
 
   const redirect = route.query.redirect
-  if (redirect) {
+  if (
+    redirect &&
+    typeof redirect === 'string' &&
+    redirect.startsWith('/') &&
+    !redirect.startsWith('//')
+  ) {
     router.push(redirect)
   } else {
     router.push({ name: 'dashboard' })

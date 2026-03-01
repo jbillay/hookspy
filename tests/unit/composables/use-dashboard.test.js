@@ -5,18 +5,21 @@ import {
   useDashboard,
 } from '../../../src/composables/use-dashboard.js'
 
-const mockChannel = {
-  on: vi.fn().mockReturnThis(),
-  subscribe: vi.fn().mockReturnThis(),
-}
+const mockTransport = vi.hoisted(() => ({
+  transportMode: { value: 'ws' },
+  isConnected: { value: true },
+  subscribe: vi.fn(),
+  unsubscribe: vi.fn(),
+  updateSubscription: vi.fn(),
+  seedSeenIds: vi.fn(),
+}))
 
-const mockClient = {
-  channel: vi.fn(() => mockChannel),
-  removeChannel: vi.fn(),
-}
+vi.mock('../../../src/composables/use-realtime-transport.js', () => ({
+  useRealtimeTransport: () => mockTransport,
+}))
 
 vi.mock('../../../src/composables/use-supabase.js', () => ({
-  useSupabase: () => ({ client: mockClient }),
+  useSupabase: () => ({ client: {} }),
 }))
 
 vi.mock('../../../src/stores/auth.js', () => ({
@@ -40,10 +43,14 @@ describe('useDashboard', () => {
     setActivePinia(createPinia())
     vi.restoreAllMocks()
     global.fetch = vi.fn()
-    mockClient.removeChannel.mockClear()
-    mockClient.channel.mockClear()
-    mockChannel.on.mockClear().mockReturnThis()
-    mockChannel.subscribe.mockClear().mockReturnThis()
+    mockTransport.subscribe.mockClear()
+    mockTransport.unsubscribe.mockClear()
+    mockTransport.seedSeenIds.mockClear()
+
+    // Reset module-level state
+    const dashboard = useDashboard()
+    dashboard.recentLogs = []
+    dashboard.requestCount24h = 0
   })
 
   describe('computed properties', () => {
@@ -87,44 +94,151 @@ describe('useDashboard', () => {
   })
 
   describe('startSubscription', () => {
-    it('creates Realtime channel with correct filter', () => {
+    it('subscribes via transport composable', () => {
       const dashboard = useDashboard()
       dashboard.startSubscription()
 
-      expect(mockClient.channel).toHaveBeenCalledWith('dashboard-activity')
-      expect(mockChannel.on).toHaveBeenCalledWith(
-        'postgres_changes',
+      expect(mockTransport.subscribe).toHaveBeenCalledWith(
+        'dashboard-activity',
         expect.objectContaining({
-          event: 'INSERT',
-          schema: 'public',
           table: 'webhook_logs',
+          events: ['INSERT', 'UPDATE'],
+          endpointIds: ['ep-1', 'ep-2', 'ep-3'],
         }),
         expect.any(Function),
       )
-      expect(mockChannel.on).toHaveBeenCalledWith(
-        'postgres_changes',
-        expect.objectContaining({
-          event: 'UPDATE',
-        }),
-        expect.any(Function),
-      )
+    })
+
+    it('seeds seen IDs when recentLogs exist', () => {
+      const dashboard = useDashboard()
+      // Set some recent logs first
+      dashboard.recentLogs = [{ id: 'log-1' }, { id: 'log-2' }]
+      dashboard.startSubscription()
+
+      expect(mockTransport.seedSeenIds).toHaveBeenCalledWith(['log-1', 'log-2'])
+    })
+
+    it('does not seed when recentLogs empty', () => {
+      const dashboard = useDashboard()
+      dashboard.recentLogs = []
+      dashboard.startSubscription()
+
+      expect(mockTransport.seedSeenIds).not.toHaveBeenCalled()
+    })
+
+    it('INSERT callback adds enriched log to recentLogs', () => {
+      const dashboard = useDashboard()
+      dashboard.startSubscription()
+
+      // Get the callback passed to subscribe
+      const callback = mockTransport.subscribe.mock.calls[0][2]
+
+      callback('INSERT', {
+        id: 'new-log',
+        endpoint_id: 'ep-1',
+        request_method: 'POST',
+      })
+
+      expect(dashboard.recentLogs.length).toBe(1)
+      expect(dashboard.recentLogs[0].id).toBe('new-log')
+      expect(dashboard.requestCount24h).toBe(1)
+    })
+
+    it('UPDATE callback updates existing log', () => {
+      const dashboard = useDashboard()
+      dashboard.recentLogs = [
+        { id: 'log-1', status: 'pending', endpoint_id: 'ep-1' },
+      ]
+      dashboard.startSubscription()
+
+      const callback = mockTransport.subscribe.mock.calls[0][2]
+
+      callback('UPDATE', {
+        id: 'log-1',
+        status: 'completed',
+        endpoint_id: 'ep-1',
+      })
+
+      expect(dashboard.recentLogs[0].status).toBe('completed')
+    })
+
+    it('UPDATE callback ignores log not in recentLogs', () => {
+      const dashboard = useDashboard()
+      dashboard.recentLogs = [{ id: 'log-1', status: 'pending' }]
+      dashboard.startSubscription()
+
+      const callback = mockTransport.subscribe.mock.calls[0][2]
+
+      callback('UPDATE', { id: 'unknown', status: 'completed' })
+
+      // No change
+      expect(dashboard.recentLogs.length).toBe(1)
+      expect(dashboard.recentLogs[0].id).toBe('log-1')
     })
   })
 
   describe('stopSubscription', () => {
-    it('removes channel when one exists', () => {
+    it('unsubscribes via transport composable', () => {
       const dashboard = useDashboard()
-      dashboard.startSubscription()
       dashboard.stopSubscription()
 
-      expect(mockClient.removeChannel).toHaveBeenCalled()
+      expect(mockTransport.unsubscribe).toHaveBeenCalledWith(
+        'dashboard-activity',
+      )
+    })
+  })
+
+  describe('fetchStats with no auth token', () => {
+    it('returns early when no auth headers', async () => {
+      const authModule = await import('../../../src/stores/auth.js')
+      vi.spyOn(authModule, 'useAuthStore').mockReturnValue({
+        session: null,
+      })
+
+      const dashboard = useDashboard()
+      await dashboard.fetchStats()
+
+      expect(global.fetch).not.toHaveBeenCalled()
+      expect(dashboard.loadingStats).toBe(false)
+    })
+  })
+
+  describe('fetchStats non-ok responses', () => {
+    it('does not update recentLogs when recentRes is not ok', async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: false,
+          json: () => Promise.resolve({ error: 'fail' }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ total: 5 }),
+        })
+
+      const dashboard = useDashboard()
+      await dashboard.fetchStats()
+
+      expect(dashboard.recentLogs).toEqual([])
+      expect(dashboard.requestCount24h).toBe(5)
     })
 
-    it('does nothing when no channel exists', () => {
-      const dashboard = useDashboard()
-      dashboard.stopSubscription()
+    it('does not update requestCount when countRes is not ok', async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ data: [{ id: 'log-1' }] }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          json: () => Promise.resolve({ error: 'fail' }),
+        })
 
-      expect(mockClient.removeChannel).not.toHaveBeenCalled()
+      const dashboard = useDashboard()
+      await dashboard.fetchStats()
+
+      expect(dashboard.recentLogs).toEqual([{ id: 'log-1' }])
     })
   })
 })

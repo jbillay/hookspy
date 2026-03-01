@@ -261,4 +261,239 @@ describe('Relay Store', () => {
       expect(store.relayStatus).toBe('inactive')
     })
   })
+
+  describe('relayStatus computed', () => {
+    it('returns active when subscribed and connected', async () => {
+      const store = useRelayStore()
+
+      // Start relay so subscribed becomes true
+      await store.startRelay()
+      expect(mockTransport.subscribe).toHaveBeenCalled()
+
+      // Simulate connected
+      mockTransport.isConnected.value = true
+      expect(store.relayStatus).toBe('active')
+
+      mockTransport.isConnected.value = false
+    })
+
+    it('returns inactive when subscribed but not connected', async () => {
+      const store = useRelayStore()
+      await store.startRelay()
+      mockTransport.isConnected.value = false
+      expect(store.relayStatus).toBe('inactive')
+    })
+  })
+
+  describe('updateSubscription', () => {
+    it('calls transport.updateSubscription when already subscribed', async () => {
+      const store = useRelayStore()
+      await store.startRelay()
+      expect(mockTransport.subscribe).toHaveBeenCalled()
+
+      await store.updateSubscription()
+      expect(mockTransport.updateSubscription).toHaveBeenCalledWith(
+        'relay-worker',
+        expect.objectContaining({ events: ['INSERT'] }),
+      )
+    })
+
+    it('stops relay when no active endpoints', async () => {
+      const endpointsModule = await import('../../../src/stores/endpoints.js')
+      vi.spyOn(endpointsModule, 'useEndpointsStore').mockReturnValue({
+        endpoints: [{ id: 'ep-1', is_active: false }],
+      })
+
+      const store = useRelayStore()
+      await store.updateSubscription()
+      expect(mockTransport.unsubscribe).toHaveBeenCalledWith('relay-worker')
+    })
+
+    it('starts relay if not yet subscribed', async () => {
+      const store = useRelayStore()
+      // Not subscribed yet, so it should call startRelay internally
+      await store.updateSubscription()
+      expect(mockTransport.subscribe).toHaveBeenCalledWith(
+        'relay-worker',
+        expect.any(Object),
+        expect.any(Function),
+      )
+    })
+  })
+
+  describe('forwardWebhook error paths', () => {
+    it('returns silently when claim fails (already claimed)', async () => {
+      const claimMock = {
+        from: vi.fn(() => ({
+          update: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                select: vi.fn().mockResolvedValue({ data: [], error: null }),
+              })),
+            })),
+          })),
+        })),
+      }
+
+      const supabaseModule =
+        await import('../../../src/composables/use-supabase.js')
+      vi.spyOn(supabaseModule, 'useSupabase').mockReturnValue({
+        client: claimMock,
+      })
+
+      const store = useRelayStore()
+      await store.forwardWebhook({
+        id: 'log-1',
+        endpoint_id: 'ep-1',
+        status: 'pending',
+        request_method: 'POST',
+        request_headers: {},
+        request_body: '',
+      })
+
+      // Should return without error — no fetch call made
+      expect(store.forwardingCount).toBe(0)
+    })
+
+    it('submits error when endpoint not found', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        status: 200,
+        ok: true,
+        json: () => Promise.resolve({}),
+      })
+
+      const store = useRelayStore()
+      await store.forwardWebhook({
+        id: 'log-1',
+        endpoint_id: 'unknown-ep',
+        status: 'pending',
+        request_method: 'POST',
+        request_headers: {},
+        request_body: '',
+      })
+
+      // Should have called response endpoint with error
+      const responseCalls = fetchSpy.mock.calls.filter((c) =>
+        c[0].includes('/response'),
+      )
+      expect(responseCalls.length).toBeGreaterThan(0)
+
+      fetchSpy.mockRestore()
+    })
+
+    it('handles fetch error with TypeError (CORS)', async () => {
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation((url) => {
+          if (url.includes('/response')) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({}),
+            })
+          }
+          return Promise.reject(new TypeError('Failed to fetch'))
+        })
+
+      const store = useRelayStore()
+      await store.forwardWebhook({
+        id: 'log-1',
+        endpoint_id: 'ep-1',
+        status: 'pending',
+        request_method: 'POST',
+        request_headers: {},
+        request_body: '{}',
+      })
+
+      expect(store.lastError).toMatch(/CORS error/)
+      expect(store.forwardingCount).toBe(0)
+
+      fetchSpy.mockRestore()
+    })
+
+    it('handles fetch error with generic Error', async () => {
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation((url) => {
+          if (url.includes('/response')) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({}),
+            })
+          }
+          return Promise.reject(new Error('Timeout'))
+        })
+
+      const store = useRelayStore()
+      await store.forwardWebhook({
+        id: 'log-1',
+        endpoint_id: 'ep-1',
+        status: 'pending',
+        request_method: 'POST',
+        request_headers: {},
+        request_body: '{}',
+      })
+
+      expect(store.lastError).toMatch(/Network error/)
+
+      fetchSpy.mockRestore()
+    })
+
+    it('does not send body for GET requests', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        status: 200,
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: () => Promise.resolve('ok'),
+      })
+
+      const store = useRelayStore()
+      await store.forwardWebhook({
+        id: 'log-1',
+        endpoint_id: 'ep-1',
+        status: 'pending',
+        request_method: 'GET',
+        request_headers: {},
+        request_body: null,
+      })
+
+      // The localhost fetch call should have body: undefined
+      const localCall = fetchSpy.mock.calls.find((c) => !c[0].includes('/api/'))
+      if (localCall) {
+        expect(localCall[1].body).toBeUndefined()
+      }
+
+      fetchSpy.mockRestore()
+    })
+
+    it('handles submitResponse fetch failure gracefully', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation((url) => {
+          if (url.includes('/response')) {
+            return Promise.reject(new Error('Network down'))
+          }
+          return Promise.resolve({
+            status: 200,
+            headers: new Headers(),
+            text: () => Promise.resolve('ok'),
+          })
+        })
+
+      const store = useRelayStore()
+      await store.forwardWebhook({
+        id: 'log-1',
+        endpoint_id: 'ep-1',
+        status: 'pending',
+        request_method: 'POST',
+        request_headers: {},
+        request_body: '{}',
+      })
+
+      // Should not throw, just log error
+      expect(consoleSpy).toHaveBeenCalled()
+
+      fetchSpy.mockRestore()
+      consoleSpy.mockRestore()
+    })
+  })
 })

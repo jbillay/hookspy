@@ -219,5 +219,213 @@ describe('Endpoints Store', () => {
 
       expect(result.data).toEqual(mockEndpoint)
     })
+
+    it('returns error on failure', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve({ error: 'Not found' }),
+      })
+
+      const store = useEndpointsStore()
+      const result = await store.getEndpoint('ep-999')
+
+      expect(result.error).toBe('Not found')
+      expect(store.error).toBe('Not found')
+    })
+
+    it('returns fallback error when no error in response', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve({}),
+      })
+
+      const store = useEndpointsStore()
+      const result = await store.getEndpoint('ep-999')
+
+      expect(result.error).toBe('Endpoint not found')
+    })
+
+    it('handles network error', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Connection refused'))
+
+      const store = useEndpointsStore()
+      const result = await store.getEndpoint('ep-1')
+
+      expect(result.error).toBe('Connection refused')
+    })
+  })
+
+  describe('no auth token paths', () => {
+    it('fetchEndpoints returns error when not authenticated', async () => {
+      // Override auth mock to return no token
+      const authModule = await import('../../../src/stores/auth.js')
+      vi.spyOn(authModule, 'useAuthStore').mockReturnValue({
+        session: null,
+      })
+
+      const store = useEndpointsStore()
+      const result = await store.fetchEndpoints()
+
+      expect(result.error).toBe('Not authenticated')
+    })
+
+    it('createEndpoint returns error when not authenticated', async () => {
+      const authModule = await import('../../../src/stores/auth.js')
+      vi.spyOn(authModule, 'useAuthStore').mockReturnValue({
+        session: null,
+      })
+
+      const store = useEndpointsStore()
+      const result = await store.createEndpoint({ name: 'Test' })
+
+      expect(result.error).toBe('Not authenticated')
+    })
+
+    it('updateEndpoint returns error when not authenticated', async () => {
+      const authModule = await import('../../../src/stores/auth.js')
+      vi.spyOn(authModule, 'useAuthStore').mockReturnValue({
+        session: null,
+      })
+
+      const store = useEndpointsStore()
+      const result = await store.updateEndpoint('ep-1', { name: 'New' })
+
+      expect(result.error).toBe('Not authenticated')
+    })
+
+    it('deleteEndpoint returns error when not authenticated', async () => {
+      const authModule = await import('../../../src/stores/auth.js')
+      vi.spyOn(authModule, 'useAuthStore').mockReturnValue({
+        session: null,
+      })
+
+      const store = useEndpointsStore()
+      const result = await store.deleteEndpoint('ep-1')
+
+      expect(result.error).toBe('Not authenticated')
+    })
+
+    it('getEndpoint returns error when not authenticated', async () => {
+      const authModule = await import('../../../src/stores/auth.js')
+      vi.spyOn(authModule, 'useAuthStore').mockReturnValue({
+        session: null,
+      })
+
+      const store = useEndpointsStore()
+      const result = await store.getEndpoint('ep-1')
+
+      expect(result.error).toBe('Not authenticated')
+    })
+  })
+
+  describe('network error paths', () => {
+    it('fetchEndpoints handles network error', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'))
+
+      const store = useEndpointsStore()
+      const result = await store.fetchEndpoints()
+
+      expect(result.error).toBe('Network error')
+      expect(store.loading).toBe(false)
+      expect(store.initialLoaded).toBe(true)
+    })
+
+    it('createEndpoint handles network error', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Timeout'))
+
+      const store = useEndpointsStore()
+      const result = await store.createEndpoint({ name: 'Test' })
+
+      expect(result.error).toBe('Timeout')
+      expect(store.loading).toBe(false)
+    })
+
+    it('deleteEndpoint handles network error', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Connection reset'))
+
+      const store = useEndpointsStore()
+      const result = await store.deleteEndpoint('ep-1')
+
+      expect(result.error).toBe('Connection reset')
+    })
+
+    it('updateEndpoint handles network error', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Offline'))
+
+      const store = useEndpointsStore()
+      const result = await store.updateEndpoint('ep-1', { name: 'Test' })
+
+      expect(result.error).toBe('Offline')
+    })
+  })
+
+  describe('fallback error messages', () => {
+    it('fetchEndpoints uses fallback when no error in response', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve({}),
+      })
+
+      const store = useEndpointsStore()
+      const result = await store.fetchEndpoints()
+
+      expect(result.error).toBe('Failed to fetch endpoints')
+    })
+
+    it('createEndpoint uses fallback when no error in response', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve({}),
+      })
+
+      const store = useEndpointsStore()
+      const result = await store.createEndpoint({ name: 'Test' })
+
+      expect(result.error).toBe('Failed to create endpoint')
+    })
+
+    it('updateEndpoint uses fallback when no error in response', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve({}),
+      })
+
+      const store = useEndpointsStore()
+      const result = await store.updateEndpoint('ep-1', { name: 'Test' })
+
+      expect(result.error).toBe('Failed to update endpoint')
+    })
+
+    it('deleteEndpoint uses fallback when no error in response', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve({}),
+      })
+
+      const store = useEndpointsStore()
+      const result = await store.deleteEndpoint('ep-1')
+
+      expect(result.error).toBe('Failed to delete endpoint')
+    })
+  })
+
+  describe('updateEndpoint edge case', () => {
+    it('does not crash when endpoint not in local list', async () => {
+      const updated = { ...mockEndpoint, id: 'ep-999', target_port: 9999 }
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ data: updated }),
+      })
+
+      const store = useEndpointsStore()
+      store.endpoints = [mockEndpoint]
+      const result = await store.updateEndpoint('ep-999', {
+        target_port: 9999,
+      })
+
+      expect(result.data).toEqual(updated)
+      // Original endpoint unchanged
+      expect(store.endpoints[0].id).toBe('ep-1')
+    })
   })
 })

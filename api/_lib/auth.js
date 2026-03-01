@@ -30,7 +30,7 @@ export async function verifyAuth(req) {
     .single()
 
   if (profileError || !profile) {
-    return { user, profile: null, error: null }
+    return { user: null, profile: null, error: 'User profile not found' }
   }
 
   // Lazy session invalidation: disabled users are rejected

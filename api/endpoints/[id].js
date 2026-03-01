@@ -1,7 +1,7 @@
 import { supabase } from '../_lib/supabase.js'
 import { verifyAuth } from '../_lib/auth.js'
 import { handleCors, setCorsHeaders } from '../_lib/cors.js'
-import { validateEndpoint } from '../_lib/validation.js'
+import { validateEndpoint, isValidUUID } from '../_lib/validation.js'
 import { getPlanLimits } from '../_lib/plans.js'
 
 const ALLOWED_FIELDS = [
@@ -21,11 +21,15 @@ export default async function handler(req, res) {
 
   const { user, profile, error: authError } = await verifyAuth(req)
   if (authError) {
-    const status = authError === 'account_disabled' ? 401 : 401
+    const status = authError === 'account_disabled' ? 403 : 401
     return res.status(status).json({ error: authError })
   }
 
   const { id } = req.query
+
+  if (!isValidUUID(id)) {
+    return res.status(400).json({ error: 'Invalid endpoint ID format' })
+  }
 
   if (req.method === 'GET') {
     const { data, error } = await supabase

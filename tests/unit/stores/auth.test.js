@@ -248,6 +248,115 @@ describe('Auth Store', () => {
     })
   })
 
+  describe('fetchProfile', () => {
+    it('does nothing when no session token exists', async () => {
+      const store = useAuthStore()
+      store.session = null
+      const result = await store.fetchProfile()
+      expect(result).toBeUndefined()
+    })
+
+    it('handles 401 with account_disabled', async () => {
+      globalThis.fetch = vi.fn(() =>
+        Promise.resolve({
+          status: 401,
+          ok: false,
+          json: () => Promise.resolve({ error: 'account_disabled' }),
+        }),
+      )
+
+      const store = useAuthStore()
+      store.session = mockSession
+      store.user = mockUser
+
+      const result = await store.fetchProfile()
+
+      expect(result.error).toBe('account_disabled')
+    })
+
+    it('handles 401 with non-disabled error (does not sign out)', async () => {
+      globalThis.fetch = vi.fn(() =>
+        Promise.resolve({
+          status: 401,
+          ok: false,
+          json: () => Promise.resolve({ error: 'token_expired' }),
+        }),
+      )
+
+      const store = useAuthStore()
+      store.session = mockSession
+
+      const result = await store.fetchProfile()
+
+      expect(result.error).toBeNull()
+    })
+
+    it('sets profile on ok response', async () => {
+      globalThis.fetch = vi.fn(() =>
+        Promise.resolve({
+          status: 200,
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              data: { plan: 'pro', role: 'admin', status: 'active' },
+            }),
+        }),
+      )
+
+      const store = useAuthStore()
+      store.session = mockSession
+
+      await store.fetchProfile()
+
+      expect(store.profile).toEqual({
+        plan: 'pro',
+        role: 'admin',
+        status: 'active',
+      })
+    })
+
+    it('handles fetch error gracefully (non-fatal)', async () => {
+      globalThis.fetch = vi.fn(() => Promise.reject(new Error('Network down')))
+
+      const store = useAuthStore()
+      store.session = mockSession
+
+      const result = await store.fetchProfile()
+
+      expect(result.error).toBeNull()
+    })
+  })
+
+  describe('computed properties', () => {
+    it('returns default plan when no profile', () => {
+      const store = useAuthStore()
+      expect(store.plan).toBe('free')
+    })
+
+    it('returns profile plan', () => {
+      const store = useAuthStore()
+      store.profile = { plan: 'pro', role: 'user' }
+      expect(store.plan).toBe('pro')
+    })
+
+    it('returns default role when no profile', () => {
+      const store = useAuthStore()
+      expect(store.role).toBe('user')
+    })
+
+    it('isAdmin returns true for admin role', () => {
+      const store = useAuthStore()
+      store.profile = { plan: 'pro', role: 'admin' }
+      expect(store.isAdmin).toBe(true)
+    })
+
+    it('isAdmin returns false for user role', () => {
+      const store = useAuthStore()
+      store.profile = { plan: 'free', role: 'user' }
+      expect(store.isAdmin).toBe(false)
+    })
+  })
+
   describe('deleteAccount', () => {
     it('deletes account and clears state on success', async () => {
       globalThis.fetch = vi.fn(() =>
@@ -303,6 +412,103 @@ describe('Auth Store', () => {
       const result = await store.deleteAccount()
 
       expect(result.error.message).toBe('Not authenticated')
+    })
+
+    it('returns fallback error when response has no error field', async () => {
+      globalThis.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({}),
+        }),
+      )
+
+      const store = useAuthStore()
+      store.session = mockSession
+
+      const result = await store.deleteAccount()
+
+      expect(result.error.message).toBe('Failed to delete account')
+    })
+
+    it('handles network error in catch block', async () => {
+      globalThis.fetch = vi.fn(() => Promise.reject(new Error('Network error')))
+
+      const store = useAuthStore()
+      store.session = mockSession
+
+      const result = await store.deleteAccount()
+
+      expect(result.error.message).toBe('Failed to delete account')
+    })
+  })
+
+  describe('signOut error path', () => {
+    it('returns error when signOut fails', async () => {
+      mockAuthMethods.signOut.mockResolvedValueOnce({
+        error: { message: 'Sign out failed' },
+      })
+
+      const store = useAuthStore()
+      store.user = mockUser
+      store.session = mockSession
+
+      const result = await store.signOut()
+
+      expect(result.error.message).toBe('Sign out failed')
+      // User should NOT be cleared on error
+      expect(store.user).toEqual(mockUser)
+    })
+  })
+
+  describe('changePassword updateUser error', () => {
+    it('returns error when updateUser fails', async () => {
+      mockAuthMethods.updateUser.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Password too weak' },
+      })
+
+      const store = useAuthStore()
+      store.user = mockUser
+      store.session = mockSession
+
+      const result = await store.changePassword('oldpass', 'weak')
+
+      expect(result.error.message).toBe('Password too weak')
+    })
+  })
+
+  describe('destroy', () => {
+    it('unsubscribes and resets initPromise', async () => {
+      const store = useAuthStore()
+      const promise = store.initAuth()
+      mockAuthMethods.onAuthStateChange('INITIAL_SESSION', null)
+      await promise
+
+      store.destroy()
+
+      // After destroy, initAuth should create a new promise
+      const promise2 = store.initAuth()
+      mockAuthMethods.onAuthStateChange('INITIAL_SESSION', null)
+      await promise2
+      expect(store.loading).toBe(false)
+    })
+  })
+
+  describe('signUp without session', () => {
+    it('does not fetch profile when signup returns no session', async () => {
+      mockAuthMethods.signUp.mockReset()
+      mockAuthMethods.signUp.mockResolvedValue({
+        data: { user: mockUser, session: null },
+        error: null,
+      })
+
+      const store = useAuthStore()
+      store.profile = null
+
+      await store.signUp('test@example.com', 'password123')
+
+      // Profile should remain null since no session
+      expect(store.profile).toBeNull()
     })
   })
 })

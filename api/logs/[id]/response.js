@@ -1,6 +1,7 @@
 import { supabase } from '../../_lib/supabase.js'
 import { verifyAuth } from '../../_lib/auth.js'
 import { handleCors, setCorsHeaders } from '../../_lib/cors.js'
+import { isValidUUID } from '../../_lib/validation.js'
 
 export default async function handler(req, res) {
   // Handle CORS
@@ -19,6 +20,10 @@ export default async function handler(req, res) {
   }
 
   const { id } = req.query
+
+  if (!isValidUUID(id)) {
+    return res.status(400).json({ error: 'Invalid log ID format' })
+  }
 
   // Look up the webhook log with endpoint info for ownership check
   const { data: log, error: logError } = await supabase

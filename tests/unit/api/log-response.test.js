@@ -38,10 +38,13 @@ vi.mock('../../../api/_lib/cors.js', () => ({
 
 const { default: handler } = await import('../../../api/logs/[id]/response.js')
 
+const VALID_LOG_ID = '00000000-0000-4000-a000-000000000001'
+const VALID_ENDPOINT_ID = '00000000-0000-4000-a000-000000000010'
+
 function createMockReq(overrides = {}) {
   return {
     method: 'POST',
-    query: { id: 'log-1' },
+    query: { id: VALID_LOG_ID },
     headers: {
       authorization: 'Bearer valid-token',
       'content-type': 'application/json',
@@ -84,14 +87,14 @@ function createMockRes() {
 
 function setupSupabaseMocks({
   log = {
-    id: 'log-1',
+    id: VALID_LOG_ID,
     status: 'pending',
-    endpoint_id: 'ep-1',
+    endpoint_id: VALID_ENDPOINT_ID,
     received_at: new Date(Date.now() - 1000).toISOString(),
     endpoints: { user_id: 'user-1' },
   },
   logError = null,
-  updateResult = { id: 'log-1' },
+  updateResult = { id: VALID_LOG_ID },
   updateError = null,
 } = {}) {
   mockFrom.mockImplementation((table) => {
@@ -229,9 +232,9 @@ describe('response submission - api/logs/[id]/response', () => {
     it('returns 409 when log is already responded', async () => {
       setupSupabaseMocks({
         log: {
-          id: 'log-1',
+          id: VALID_LOG_ID,
           status: 'responded',
-          endpoint_id: 'ep-1',
+          endpoint_id: VALID_ENDPOINT_ID,
           received_at: new Date().toISOString(),
           endpoints: { user_id: 'user-1' },
         },
@@ -248,9 +251,9 @@ describe('response submission - api/logs/[id]/response', () => {
     it('returns 409 when log is already timed out', async () => {
       setupSupabaseMocks({
         log: {
-          id: 'log-1',
+          id: VALID_LOG_ID,
           status: 'timeout',
-          endpoint_id: 'ep-1',
+          endpoint_id: VALID_ENDPOINT_ID,
           received_at: new Date().toISOString(),
           endpoints: { user_id: 'user-1' },
         },
@@ -267,9 +270,9 @@ describe('response submission - api/logs/[id]/response', () => {
     it('returns 409 when log is already in error state', async () => {
       setupSupabaseMocks({
         log: {
-          id: 'log-1',
+          id: VALID_LOG_ID,
           status: 'error',
-          endpoint_id: 'ep-1',
+          endpoint_id: VALID_ENDPOINT_ID,
           received_at: new Date().toISOString(),
           endpoints: { user_id: 'user-1' },
         },
@@ -300,7 +303,7 @@ describe('response submission - api/logs/[id]/response', () => {
 
       expect(res.status).toHaveBeenCalledWith(200)
       expect(res.body.success).toBe(true)
-      expect(res.body.log_id).toBe('log-1')
+      expect(res.body.log_id).toBe(VALID_LOG_ID)
       expect(res.body.status).toBe('responded')
       expect(typeof res.body.duration_ms).toBe('number')
     })
@@ -308,9 +311,9 @@ describe('response submission - api/logs/[id]/response', () => {
     it('accepts forwarding status logs', async () => {
       setupSupabaseMocks({
         log: {
-          id: 'log-1',
+          id: VALID_LOG_ID,
           status: 'forwarding',
-          endpoint_id: 'ep-1',
+          endpoint_id: VALID_ENDPOINT_ID,
           received_at: new Date(Date.now() - 2000).toISOString(),
           endpoints: { user_id: 'user-1' },
         },

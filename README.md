@@ -12,14 +12,14 @@ No ngrok. No cloudflared. No CLI agent. Just open a browser tab.
 
 ## Why HookSpy?
 
-| Pain Point | HookSpy Solution |
-| --- | --- |
-| Tunnels expose your entire machine | Only webhook traffic is forwarded, nothing else |
-| CLI tools require installation and config | Zero install — works in any modern browser |
-| Tunnel URLs change on restart | Persistent endpoint URLs that never change |
-| Hard to inspect webhook payloads | Full request/response viewer with search and filters |
-| Can't replay failed webhooks | One-click replay to re-test any past request |
-| No visibility into what was sent back | See both the incoming request and your server's response side by side |
+| Pain Point                                | HookSpy Solution                                                      |
+| ----------------------------------------- | --------------------------------------------------------------------- |
+| Tunnels expose your entire machine        | Only webhook traffic is forwarded, nothing else                       |
+| CLI tools require installation and config | Zero install — works in any modern browser                            |
+| Tunnel URLs change on restart             | Persistent endpoint URLs that never change                            |
+| Hard to inspect webhook payloads          | Full request/response viewer with search and filters                  |
+| Can't replay failed webhooks              | One-click replay to re-test any past request                          |
+| No visibility into what was sent back     | See both the incoming request and your server's response side by side |
 
 ## How It Works
 
@@ -89,34 +89,34 @@ The browser acts as the relay bridge. As long as the tab is open, your webhooks 
 
 ## Plans
 
-| | Free | Pro |
-| --- | --- | --- |
-| Endpoints | 3 | 25 |
-| Rate limit | 30 req/min | 120 req/min |
-| Max payload | 256 KB | 5 MB |
-| Log retention | 6 hours | 7 days |
-| Max timeout | 30s | 55s |
-| Replay | — | Included |
-| Search & filter | — | Included |
-| Custom header injection | — | Included |
+|                         | Free       | Pro         |
+| ----------------------- | ---------- | ----------- |
+| Endpoints               | 3          | 25          |
+| Rate limit              | 30 req/min | 120 req/min |
+| Max payload             | 256 KB     | 5 MB        |
+| Log retention           | 6 hours    | 7 days      |
+| Max timeout             | 30s        | 55s         |
+| Replay                  | —          | Included    |
+| Search & filter         | —          | Included    |
+| Custom header injection | —          | Included    |
 
 The Free plan is fully functional for most webhook development workflows. Pro unlocks higher limits and power-user features.
 
 ## Tech Stack
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | Vue 3 (Composition API) + Vite |
-| UI Components | PrimeVue 4 (Aura theme) |
-| Styling | Tailwind CSS 3 |
-| State Management | Pinia |
-| Backend | Vercel Serverless Functions (JavaScript) |
-| Database | Supabase (PostgreSQL + Row Level Security) |
-| Auth | Supabase Auth (email/password) |
-| Real-time | Supabase Realtime (WebSocket) + HTTP polling fallback |
-| Hosting | Vercel |
-| CI/CD | GitHub Actions |
-| Analytics | Vercel Analytics + Speed Insights |
+| Layer            | Technology                                            |
+| ---------------- | ----------------------------------------------------- |
+| Frontend         | Vue 3 (Composition API) + Vite                        |
+| UI Components    | PrimeVue 4 (Aura theme)                               |
+| Styling          | Tailwind CSS 3                                        |
+| State Management | Pinia                                                 |
+| Backend          | Vercel Serverless Functions (JavaScript)              |
+| Database         | Supabase (PostgreSQL + Row Level Security)            |
+| Auth             | Supabase Auth (email/password)                        |
+| Real-time        | Supabase Realtime (WebSocket) + HTTP polling fallback |
+| Hosting          | Vercel                                                |
+| CI/CD            | GitHub Actions                                        |
+| Analytics        | Vercel Analytics + Speed Insights                     |
 
 ## Getting Started
 
@@ -173,16 +173,16 @@ app.use(cors({ origin: 'http://localhost:5173' }))
 <details>
 <summary>CORS packages for other frameworks</summary>
 
-| Framework | Package / Method |
-| --- | --- |
-| Express.js | `cors` |
-| Flask | `flask-cors` |
-| Django | `django-cors-headers` |
-| FastAPI | `CORSMiddleware` |
-| Spring Boot | `@CrossOrigin` annotation |
-| ASP.NET | `UseCors()` middleware |
-| Rails | `rack-cors` |
-| Laravel | Built-in CORS middleware |
+| Framework     | Package / Method               |
+| ------------- | ------------------------------ |
+| Express.js    | `cors`                         |
+| Flask         | `flask-cors`                   |
+| Django        | `django-cors-headers`          |
+| FastAPI       | `CORSMiddleware`               |
+| Spring Boot   | `@CrossOrigin` annotation      |
+| ASP.NET       | `UseCors()` middleware         |
+| Rails         | `rack-cors`                    |
+| Laravel       | Built-in CORS middleware       |
 | Go (net/http) | Custom middleware or `rs/cors` |
 
 </details>
