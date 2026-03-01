@@ -1,3 +1,4 @@
+import Stripe from 'stripe'
 import { supabase } from '../_lib/supabase.js'
 import { verifyAuth } from '../_lib/auth.js'
 import { handleCors, setCorsHeaders } from '../_lib/cors.js'
@@ -92,7 +93,7 @@ export default async function handler(req, res) {
     // Check if user is an admin — if so, ensure they're not the last one
     const { data: userProfile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, stripe_subscription_id')
       .eq('id', user.id)
       .single()
 
@@ -107,6 +108,19 @@ export default async function handler(req, res) {
         return res.status(400).json({
           error: 'Cannot delete the last active admin account',
         })
+      }
+    }
+
+    // Cancel Stripe subscription if exists to prevent orphaned billing
+    if (userProfile?.stripe_subscription_id) {
+      try {
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+        await stripe.subscriptions.cancel(userProfile.stripe_subscription_id)
+      } catch (stripeErr) {
+        console.error(
+          'Failed to cancel Stripe subscription on account deletion:',
+          stripeErr.message,
+        )
       }
     }
 

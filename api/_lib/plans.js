@@ -111,6 +111,57 @@ export async function checkRateLimit(endpointSlug, plan) {
 }
 
 /**
+ * Downgrade a user to the free plan.
+ * Deactivates excess active endpoints (most recently created first).
+ * Returns { endpointsDeactivated }.
+ */
+export async function downgradeToFree(userId) {
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({ plan: 'free', plan_changed_at: new Date().toISOString() })
+    .eq('id', userId)
+
+  if (updateError) {
+    console.error('Downgrade plan update failed:', updateError.message)
+    return { endpointsDeactivated: 0 }
+  }
+
+  const limits = await getPlanLimits('free')
+  if (!limits) {
+    return { endpointsDeactivated: 0 }
+  }
+
+  const { count: activeCount } = await supabase
+    .from('endpoints')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('is_active', true)
+
+  if (!activeCount || activeCount <= limits.max_endpoints) {
+    return { endpointsDeactivated: 0 }
+  }
+
+  const excess = activeCount - limits.max_endpoints
+
+  const { data: toDeactivate } = await supabase
+    .from('endpoints')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(excess)
+
+  if (toDeactivate && toDeactivate.length > 0) {
+    const ids = toDeactivate.map((e) => e.id)
+    await supabase.from('endpoints').update({ is_active: false }).in('id', ids)
+
+    return { endpointsDeactivated: ids.length }
+  }
+
+  return { endpointsDeactivated: 0 }
+}
+
+/**
  * Verify the caller is an admin.
  * Returns { admin: true } or { admin: false, error }.
  */

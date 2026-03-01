@@ -1,7 +1,7 @@
 import { supabase } from '../../_lib/supabase.js'
 import { verifyAuth } from '../../_lib/auth.js'
 import { handleCors, setCorsHeaders } from '../../_lib/cors.js'
-import { requireAdmin, getPlanLimits } from '../../_lib/plans.js'
+import { requireAdmin, downgradeToFree } from '../../_lib/plans.js'
 import { isValidUUID } from '../../_lib/validation.js'
 
 export default async function handler(req, res) {
@@ -114,53 +114,43 @@ async function handlePlanChange(id, user, body, res) {
     return res.status(200).json({ data: targetUser, endpoints_deactivated: 0 })
   }
 
-  // Update plan
-  const { data: updated, error: updateError } = await supabase
-    .from('profiles')
-    .update({ plan, plan_changed_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single()
-
-  if (updateError) {
-    console.error('Admin plan change failed:', updateError.message)
-    return res.status(500).json({ error: 'Internal server error' })
-  }
-
-  // Handle downgrade: deactivate excess endpoints
+  // Handle downgrade via shared helper, or direct update for upgrade
   let endpointsDeactivated = 0
+  let updated
+
   if (plan === 'free' && oldPlan === 'pro') {
-    const limits = await getPlanLimits('free')
-    if (limits) {
-      const { count: activeCount } = await supabase
-        .from('endpoints')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', id)
-        .eq('is_active', true)
+    const result = await downgradeToFree(id)
+    endpointsDeactivated = result.endpointsDeactivated
 
-      if (activeCount > limits.max_endpoints) {
-        const excess = activeCount - limits.max_endpoints
+    // Re-fetch the updated profile
+    const { data: refreshed, error: fetchErr } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
+      .single()
 
-        // Get most recently created active endpoints to deactivate
-        const { data: toDeactivate } = await supabase
-          .from('endpoints')
-          .select('id')
-          .eq('user_id', id)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false })
-          .limit(excess)
-
-        if (toDeactivate && toDeactivate.length > 0) {
-          const ids = toDeactivate.map((e) => e.id)
-          await supabase
-            .from('endpoints')
-            .update({ is_active: false })
-            .in('id', ids)
-
-          endpointsDeactivated = ids.length
-        }
-      }
+    if (fetchErr) {
+      console.error(
+        'Admin plan change: failed to re-fetch profile:',
+        fetchErr.message,
+      )
+      return res.status(500).json({ error: 'Internal server error' })
     }
+    updated = refreshed
+  } else {
+    // Upgrade path (free → pro)
+    const { data: upgradeData, error: updateError } = await supabase
+      .from('profiles')
+      .update({ plan, plan_changed_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (updateError) {
+      console.error('Admin plan change failed:', updateError.message)
+      return res.status(500).json({ error: 'Internal server error' })
+    }
+    updated = upgradeData
   }
 
   // Insert audit log entry

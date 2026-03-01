@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
@@ -16,7 +16,12 @@ import { useUserPlan } from '../composables/use-user-plan.js'
 const auth = useAuth()
 const { plan, isFree, limits } = useUserPlan()
 const toast = useToast()
+const route = useRoute()
 const router = useRouter()
+
+// Stripe checkout/portal
+const checkoutLoading = ref(false)
+const portalLoading = ref(false)
 
 const displayName = ref('')
 const saving = ref(false)
@@ -57,9 +62,98 @@ const canDelete = computed(
 const endpointsUsed = computed(() => auth.profile?.usage?.endpoints_count || 0)
 const endpointsMax = computed(() => limits.value?.max_endpoints || 0)
 
-onMounted(() => {
+onMounted(async () => {
   displayName.value = auth.profile?.display_name || ''
+
+  // Handle checkout return query params
+  const checkoutStatus = route.query.checkout
+  if (checkoutStatus === 'success') {
+    toast.add({
+      severity: 'success',
+      summary: 'Welcome to Pro!',
+      detail: 'Your account has been upgraded.',
+      life: 5000,
+    })
+    await auth.fetchProfile()
+    router.replace({ path: '/settings' })
+  } else if (checkoutStatus === 'cancel') {
+    toast.add({
+      severity: 'info',
+      summary: 'Checkout Canceled',
+      detail: 'You can upgrade anytime.',
+      life: 5000,
+    })
+    router.replace({ path: '/settings' })
+  }
 })
+
+async function handleUpgrade() {
+  checkoutLoading.value = true
+  try {
+    const res = await fetch('/api/stripe/checkout', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${auth.session?.access_token}`,
+      },
+    })
+
+    if (res.ok) {
+      const { url } = await res.json()
+      window.location.href = url
+    } else {
+      const { error } = await res.json()
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error || 'Failed to start checkout',
+        life: 5000,
+      })
+    }
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to start checkout',
+      life: 5000,
+    })
+  } finally {
+    checkoutLoading.value = false
+  }
+}
+
+async function handleManageSubscription() {
+  portalLoading.value = true
+  try {
+    const res = await fetch('/api/stripe/portal', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${auth.session?.access_token}`,
+      },
+    })
+
+    if (res.ok) {
+      const { url } = await res.json()
+      window.location.href = url
+    } else {
+      const { error } = await res.json()
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error || 'Failed to open billing portal',
+        life: 5000,
+      })
+    }
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to open billing portal',
+      life: 5000,
+    })
+  } finally {
+    portalLoading.value = false
+  }
+}
 
 async function saveDisplayName() {
   saving.value = true
@@ -270,16 +364,32 @@ async function handleDeleteAccount() {
       <template #content>
         <p class="text-sm text-neutral-600 mb-4">
           Get more endpoints, longer log retention, webhook replay, advanced
-          search, and custom headers. Contact an admin to upgrade your account.
+          search, and custom headers.
         </p>
+        <Button
+          label="Upgrade to Pro — 5€/month"
+          icon="pi pi-bolt"
+          :loading="checkoutLoading"
+          class="mb-4"
+          @click="handleUpgrade"
+        />
         <PlanComparison />
       </template>
     </Card>
 
-    <!-- Plan comparison for Pro users -->
+    <!-- Plan features for Pro users -->
     <Card v-else class="mb-6">
       <template #title>Plan Features</template>
       <template #content>
+        <Button
+          v-if="auth.profile?.stripe_customer_id"
+          label="Manage Subscription"
+          icon="pi pi-credit-card"
+          severity="secondary"
+          :loading="portalLoading"
+          class="mb-4"
+          @click="handleManageSubscription"
+        />
         <PlanComparison />
       </template>
     </Card>
