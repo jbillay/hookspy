@@ -123,6 +123,7 @@ function handleSubmit() {
           v-model="form.target_port"
           :min="1"
           :max="65535"
+          :use-grouping="false"
           :invalid="!!errors.target_port"
         />
         <small v-if="errors.target_port" class="text-red-500 text-xs">{{

@@ -24,6 +24,16 @@ const statusConfig = computed(() => {
         pillClass: 'bg-amber-50 text-amber-700 border-amber-200',
       }
     default:
+      if (
+        transport.transportMode.value === null ||
+        transport.transportMode.value === 'unknown'
+      ) {
+        return {
+          dotClass: 'status-dot bg-blue-400 status-dot-pulse',
+          label: 'Connecting...',
+          pillClass: 'bg-blue-50 text-blue-700 border-blue-200',
+        }
+      }
       return {
         dotClass: 'status-dot bg-neutral-400',
         label: 'Disconnected',

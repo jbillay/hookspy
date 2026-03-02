@@ -91,11 +91,28 @@ onUnmounted(() => {
         >Search
         <span v-if="!canSearch" class="text-neutral-400">(Pro)</span>
       </label>
+      <div
+        v-if="!canSearch"
+        v-tooltip.bottom="'Upgrade to Pro to use advanced filters'"
+        class="relative"
+      >
+        <InputText
+          v-model="localSearch"
+          placeholder="Search logs..."
+          class="w-full"
+          disabled
+        />
+        <router-link
+          to="/settings"
+          class="absolute inset-0 opacity-0"
+          aria-label="Upgrade to Pro"
+        />
+      </div>
       <InputText
+        v-else
         v-model="localSearch"
         placeholder="Search logs..."
         class="w-full"
-        :disabled="!canSearch"
         @input="onSearchInput"
       />
     </div>
@@ -121,13 +138,26 @@ onUnmounted(() => {
         >Method
         <span v-if="!canSearch" class="text-neutral-400">(Pro)</span>
       </label>
+      <div
+        v-if="!canSearch"
+        v-tooltip.bottom="'Upgrade to Pro to use advanced filters'"
+      >
+        <MultiSelect
+          v-model="localMethod"
+          :options="methodOptions"
+          placeholder="All methods"
+          display="chip"
+          class="w-48"
+          disabled
+        />
+      </div>
       <MultiSelect
+        v-else
         v-model="localMethod"
         :options="methodOptions"
         placeholder="All methods"
         display="chip"
         class="w-48"
-        :disabled="!canSearch"
         @change="onMethodChange"
       />
     </div>

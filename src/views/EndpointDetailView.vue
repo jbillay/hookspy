@@ -28,6 +28,16 @@ const webhookUrl = computed(() => {
 })
 
 onMounted(async () => {
+  // Pre-fill form when duplicating an endpoint
+  if (mode.value === 'create' && route.query.duplicate) {
+    endpoint.value = {
+      name: route.query.name || '',
+      target_url: route.query.target_url || 'http://localhost',
+      target_port: Number(route.query.target_port) || 3000,
+      target_path: route.query.target_path || '/',
+      timeout_seconds: Number(route.query.timeout_seconds) || 30,
+    }
+  }
   if (mode.value === 'edit') {
     loadingEndpoint.value = true
     const { data, error } = await store.getEndpoint(route.params.id)
@@ -150,7 +160,7 @@ function handleCancel() {
               >Webhook URL</span
             >
             <code
-              class="text-sm font-code text-neutral-700 bg-neutral-50 px-3 py-1.5 rounded-lg block truncate"
+              class="text-sm font-code text-neutral-700 bg-neutral-50 px-3 py-1.5 rounded-lg block overflow-x-auto whitespace-nowrap"
               >{{ webhookUrl }}</code
             >
           </div>

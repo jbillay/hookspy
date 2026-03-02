@@ -60,9 +60,13 @@ function goToEndpoint() {
             endpoint.is_active ? 'status-dot-active' : 'status-dot-inactive',
           ]"
         />
-        <span class="text-sm font-semibold text-neutral-900 truncate">
+        <router-link
+          :to="`/endpoints/${endpoint.id}`"
+          class="text-sm font-semibold text-neutral-900 truncate no-underline hover:text-teal-600 transition-colors"
+          @click.stop
+        >
           {{ endpoint.name }}
-        </span>
+        </router-link>
       </div>
       <ToggleSwitch
         :model-value="endpoint.is_active"
@@ -74,11 +78,13 @@ function goToEndpoint() {
     <!-- Webhook URL -->
     <div
       class="flex items-center gap-2 bg-neutral-50 rounded-lg px-3 py-2 mb-3"
+      data-tour="webhook-url"
       @click.stop
     >
-      <code class="text-xs text-neutral-600 font-code truncate flex-1">{{
-        webhookUrl
-      }}</code>
+      <code
+        class="text-xs text-neutral-600 font-code flex-1 overflow-x-auto whitespace-nowrap"
+        >{{ webhookUrl }}</code
+      >
       <button
         class="flex-shrink-0 p-1 text-neutral-400 hover:text-neutral-600 transition-colors bg-transparent border-0 cursor-pointer"
         title="Copy URL"

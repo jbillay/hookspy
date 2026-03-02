@@ -14,6 +14,28 @@ const auth = useAuth()
 
 const email = ref('')
 const password = ref('')
+const resetSent = ref(false)
+
+async function handleForgotPassword() {
+  if (!email.value) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Enter your email',
+      detail: 'Please enter your email address first.',
+      life: 3000,
+    })
+    return
+  }
+  await auth.resetPassword(email.value)
+  resetSent.value = true
+  toast.add({
+    severity: 'info',
+    summary: 'Check your email',
+    detail:
+      "If an account exists with this email, you'll receive a password reset link.",
+    life: 8000,
+  })
+}
 
 async function handleLogin() {
   if (!email.value || !password.value) return
@@ -59,12 +81,15 @@ async function handleLogin() {
     <div class="w-full max-w-sm">
       <!-- Branding -->
       <div class="text-center mb-8">
-        <div class="inline-flex items-center gap-2.5 mb-3">
+        <router-link
+          to="/"
+          class="inline-flex items-center gap-2.5 mb-3 no-underline"
+        >
           <img src="@/assets/logo.png" alt="HookSpy" class="w-10 h-10" />
           <span class="text-2xl font-bold text-neutral-900 font-display"
             >HookSpy</span
           >
-        </div>
+        </router-link>
         <p class="text-sm text-neutral-500">
           Sign in to manage your webhook endpoints
         </p>
@@ -97,6 +122,17 @@ async function handleLogin() {
               toggle-mask
               input-class="w-full"
             />
+          </div>
+
+          <div class="flex justify-end -mt-2">
+            <button
+              type="button"
+              class="text-xs font-medium bg-transparent border-0 cursor-pointer p-0"
+              style="color: var(--hs-brand)"
+              @click="handleForgotPassword"
+            >
+              Forgot password?
+            </button>
           </div>
 
           <Button

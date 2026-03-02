@@ -21,8 +21,8 @@ function validate() {
   if (!email.value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
     e.email = 'Please enter a valid email address'
   }
-  if (!password.value || password.value.length < 6) {
-    e.password = 'Password must be at least 6 characters'
+  if (!password.value || password.value.length < 8) {
+    e.password = 'Password must be at least 8 characters'
   }
   if (password.value !== confirmPassword.value) {
     e.confirmPassword = 'Passwords do not match'
@@ -37,9 +37,16 @@ async function handleRegister() {
   const { data, error } = await auth.signUp(email.value, password.value)
 
   if (error) {
-    const message = error.message?.includes('already registered')
-      ? 'This email is already registered'
-      : error.message || 'Registration failed'
+    const msg = error.message || ''
+    const message = msg.includes('already registered')
+      ? 'This email is already registered. Try signing in instead.'
+      : msg.includes('password')
+        ? 'Password does not meet requirements. Use at least 8 characters.'
+        : msg.includes('rate limit')
+          ? 'Too many attempts. Please wait a moment and try again.'
+          : msg.includes('email')
+            ? 'Please enter a valid email address.'
+            : 'Something went wrong. Please try again.'
     toast.add({
       severity: 'error',
       summary: 'Error',
@@ -78,12 +85,15 @@ async function handleRegister() {
     <div class="w-full max-w-sm">
       <!-- Branding -->
       <div class="text-center mb-8">
-        <div class="inline-flex items-center gap-2.5 mb-3">
+        <router-link
+          to="/"
+          class="inline-flex items-center gap-2.5 mb-3 no-underline"
+        >
           <img src="@/assets/logo.png" alt="HookSpy" class="w-10 h-10" />
           <span class="text-2xl font-bold text-neutral-900 font-display"
             >HookSpy</span
           >
-        </div>
+        </router-link>
         <p class="text-sm text-neutral-500">
           Create your account to get started
         </p>
@@ -124,6 +134,12 @@ async function handleRegister() {
             <small v-if="errors.password" class="text-red-500 text-xs">{{
               errors.password
             }}</small>
+            <small
+              v-else-if="password.length > 0 && password.length < 8"
+              class="text-neutral-400 text-xs"
+            >
+              Must be at least 8 characters
+            </small>
           </div>
 
           <div class="flex flex-col gap-1.5">

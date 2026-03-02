@@ -10,7 +10,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['edit', 'delete', 'toggle'])
+const emit = defineEmits(['edit', 'delete', 'toggle', 'duplicate'])
 
 const toast = useToast()
 
@@ -73,9 +73,10 @@ async function copyUrl() {
 
     <!-- Webhook URL -->
     <div class="flex items-center gap-2 bg-neutral-50 rounded-lg px-3 py-2">
-      <code class="text-xs text-neutral-600 font-code truncate flex-1">{{
-        webhookUrl
-      }}</code>
+      <code
+        class="text-xs text-neutral-600 font-code flex-1 overflow-x-auto whitespace-nowrap"
+        >{{ webhookUrl }}</code
+      >
       <button
         class="flex-shrink-0 p-1 text-neutral-400 hover:text-neutral-600 transition-colors bg-transparent border-0 cursor-pointer"
         title="Copy URL"
@@ -106,6 +107,14 @@ async function copyUrl() {
         text
         size="small"
         @click="emit('edit', endpoint)"
+      />
+      <Button
+        label="Duplicate"
+        icon="pi pi-copy"
+        severity="secondary"
+        text
+        size="small"
+        @click="emit('duplicate', endpoint)"
       />
       <Button
         label="Delete"

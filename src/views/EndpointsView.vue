@@ -15,7 +15,7 @@ const router = useRouter()
 const toast = useToast()
 const confirm = useConfirm()
 const store = useEndpoints()
-const { endpointsMax } = useUserPlan()
+const { endpointsMax, isFree } = useUserPlan()
 
 const editDialogVisible = ref(false)
 const atLimit = ref(false)
@@ -85,6 +85,20 @@ function handleDelete(endpoint) {
   })
 }
 
+function handleDuplicate(endpoint) {
+  router.push({
+    name: 'endpoint-new',
+    query: {
+      duplicate: endpoint.id,
+      name: `${endpoint.name} (copy)`,
+      target_url: endpoint.target_url,
+      target_port: endpoint.target_port,
+      target_path: endpoint.target_path,
+      timeout_seconds: endpoint.timeout_seconds,
+    },
+  })
+}
+
 async function handleToggle(endpoint) {
   const { error } = await store.toggleActive(endpoint.id)
   if (error) {
@@ -116,18 +130,39 @@ async function handleToggle(endpoint) {
         <i class="pi pi-plus text-sm" />
         New Endpoint
       </button>
-      <span v-else class="text-sm text-neutral-500">
-        Endpoint limit reached
-      </span>
+      <div v-else class="flex flex-col items-end gap-1">
+        <span class="text-sm text-neutral-500">Endpoint limit reached</span>
+        <router-link
+          v-if="isFree"
+          to="/settings"
+          class="text-xs font-medium no-underline"
+          style="color: var(--hs-brand)"
+        >
+          Upgrade to Pro for 25 endpoints &rarr;
+        </router-link>
+      </div>
     </div>
 
     <!-- Usage indicator -->
-    <div v-if="store.endpoints.length > 0" class="mb-4 max-w-xs">
+    <div v-if="store.endpoints.length > 0" class="mb-4 max-w-sm">
       <PlanUsage
         label="Endpoints"
         :current="store.endpoints.length"
         :max="endpointsMax"
       />
+      <div class="flex items-center justify-between mt-1">
+        <span class="text-xs text-neutral-500">
+          {{ isFree ? 'Free' : 'Pro' }} plan: {{ endpointsMax }} endpoints
+        </span>
+        <router-link
+          v-if="isFree"
+          to="/settings"
+          class="text-xs font-medium no-underline"
+          style="color: var(--hs-brand)"
+        >
+          Upgrade to Pro &rarr;
+        </router-link>
+      </div>
     </div>
 
     <!-- Loading -->
@@ -167,6 +202,7 @@ async function handleToggle(endpoint) {
         :key="endpoint.id"
         :endpoint="endpoint"
         @edit="handleEdit"
+        @duplicate="handleDuplicate"
         @delete="handleDelete"
       >
         <template #toggle>

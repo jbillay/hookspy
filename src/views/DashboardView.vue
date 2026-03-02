@@ -1,18 +1,82 @@
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import Skeleton from 'primevue/skeleton'
+import { driver } from 'driver.js'
+import 'driver.js/dist/driver.css'
 import StatCard from '../components/dashboard/StatCard.vue'
 import DashboardEndpointCard from '../components/dashboard/DashboardEndpointCard.vue'
 import ActivityFeed from '../components/dashboard/ActivityFeed.vue'
 import { useDashboard } from '../composables/use-dashboard.js'
 import { useEndpoints } from '../composables/use-endpoints.js'
 import { useAuth } from '../composables/use-auth.js'
+import { useOnboarding } from '../composables/use-onboarding.js'
 
 const dashboard = useDashboard()
 const endpoints = useEndpoints()
 const auth = useAuth()
 const router = useRouter()
+const { shouldShowTour, completeTour } = useOnboarding()
+
+function startOnboardingTour() {
+  const driverObj = driver({
+    showProgress: true,
+    animate: true,
+    overlayColor: 'rgba(0, 0, 0, 0.6)',
+    steps: [
+      {
+        element: '[data-tour="webhook-url"]',
+        popover: {
+          title: 'Copy your webhook URL',
+          description:
+            'This is your unique public URL. Click the copy button to grab it.',
+          side: 'bottom',
+          align: 'start',
+        },
+      },
+      {
+        popover: {
+          title: 'Paste it in your webhook provider',
+          description:
+            'Go to Stripe, GitHub, or any service that sends webhooks and paste this URL as the endpoint.',
+        },
+      },
+      {
+        popover: {
+          title: 'Keep this dashboard open',
+          description:
+            'Your browser acts as the relay bridge. Incoming webhooks are forwarded to your local server in real time.',
+        },
+      },
+      {
+        popover: {
+          title: 'Send a test webhook',
+          description:
+            'Trigger a test event from your provider and watch it appear here. Your local server will receive it instantly!',
+        },
+      },
+    ],
+    onDestroyed: () => {
+      completeTour()
+    },
+  })
+  driverObj.drive()
+}
+
+// Watch for tour trigger: show when dashboard is loaded, endpoints exist, and tour not completed
+watch(
+  () =>
+    shouldShowTour.value &&
+    endpoints.initialLoaded &&
+    endpoints.endpoints.length > 0,
+  async (shouldStart) => {
+    if (shouldStart) {
+      await nextTick()
+      // Small delay to ensure DOM is fully rendered
+      setTimeout(startOnboardingTour, 500)
+    }
+  },
+)
 
 onMounted(async () => {
   await auth.initAuth()

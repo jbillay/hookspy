@@ -167,6 +167,20 @@ function userInitial() {
         v-if="mobileMenuOpen"
         class="md:hidden pb-4 border-t border-neutral-100 pt-3 flex flex-col gap-1"
       >
+        <!-- User info -->
+        <div
+          class="flex items-center gap-2 px-3 py-2 mb-1 border-b border-neutral-100 pb-3"
+        >
+          <div
+            class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold text-brand bg-brand-subtle flex-shrink-0"
+          >
+            {{ userInitial() }}
+          </div>
+          <span class="text-sm text-neutral-600 truncate">{{
+            auth.user?.email
+          }}</span>
+          <PlanBadge :plan="plan" />
+        </div>
         <router-link
           to="/dashboard"
           class="px-3 py-2 rounded-lg text-sm font-medium no-underline text-neutral-700 hover:bg-neutral-100"

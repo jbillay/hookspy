@@ -1,11 +1,12 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
+import Skeleton from 'primevue/skeleton'
 import { useToast } from 'primevue/usetoast'
 import PlanBadge from '../components/settings/PlanBadge.vue'
 import PlanUsage from '../components/settings/PlanUsage.vue'
@@ -56,14 +57,32 @@ const deleteConfirmEmail = ref('')
 const deleting = ref(false)
 
 const canDelete = computed(
-  () => deleteConfirmEmail.value === auth.user?.email && !deleting.value,
+  () =>
+    (deleteConfirmEmail.value === 'DELETE' ||
+      deleteConfirmEmail.value === auth.user?.email) &&
+    !deleting.value,
 )
 
 const endpointsUsed = computed(() => auth.profile?.usage?.endpoints_count || 0)
 const endpointsMax = computed(() => limits.value?.max_endpoints || 0)
 
+// Reactively update displayName when profile loads (fixes blank-on-SPA-navigation)
+watch(
+  () => auth.profile,
+  (profile) => {
+    if (profile) {
+      displayName.value = profile.display_name || ''
+    }
+  },
+)
+
 onMounted(async () => {
   displayName.value = auth.profile?.display_name || ''
+
+  // Ensure profile is loaded on SPA navigation
+  if (!auth.profile && auth.session?.access_token) {
+    await auth.fetchProfile()
+  }
 
   // Handle checkout return query params
   const checkoutStatus = route.query.checkout
@@ -244,211 +263,243 @@ async function handleDeleteAccount() {
   <div class="max-w-3xl mx-auto py-8 px-4">
     <h1 class="text-2xl font-bold text-neutral-900 mb-6">Account Settings</h1>
 
-    <!-- Profile Section -->
-    <Card class="mb-6">
-      <template #title>Profile</template>
-      <template #content>
-        <div class="flex flex-col gap-4">
-          <div>
-            <label class="block text-sm font-medium text-neutral-600 mb-1"
-              >Email</label
-            >
-            <InputText
-              :model-value="auth.user?.email"
-              disabled
-              class="w-full"
-            />
+    <!-- Loading state while profile data is not yet available -->
+    <template v-if="auth.loading || !auth.profile">
+      <Card class="mb-6">
+        <template #content>
+          <div class="flex flex-col gap-4">
+            <Skeleton width="100%" height="2rem" />
+            <Skeleton width="60%" height="1.5rem" />
+            <Skeleton width="100%" height="2rem" />
           </div>
-          <div>
-            <label class="block text-sm font-medium text-neutral-600 mb-1"
-              >Display Name</label
-            >
-            <div class="flex gap-2">
+        </template>
+      </Card>
+      <Card class="mb-6">
+        <template #content>
+          <Skeleton width="100%" height="3rem" />
+        </template>
+      </Card>
+    </template>
+
+    <template v-else>
+      <!-- Profile Section -->
+      <Card class="mb-6">
+        <template #title>Profile</template>
+        <template #content>
+          <div class="flex flex-col gap-4">
+            <div>
+              <label class="block text-sm font-medium text-neutral-600 mb-1"
+                >Email</label
+              >
               <InputText
-                v-model="displayName"
-                placeholder="Enter a display name"
-                class="flex-1"
-                :maxlength="100"
+                :model-value="auth.user?.email"
+                disabled
+                class="w-full"
               />
+              <small class="text-neutral-400 text-xs"
+                >Email cannot be changed</small
+              >
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-neutral-600 mb-1"
+                >Display Name</label
+              >
+              <div class="flex gap-2">
+                <InputText
+                  v-model="displayName"
+                  placeholder="Enter a display name"
+                  class="flex-1"
+                  :maxlength="100"
+                />
+                <Button
+                  label="Save"
+                  :loading="saving"
+                  size="small"
+                  @click="saveDisplayName"
+                />
+              </div>
+            </div>
+          </div>
+        </template>
+      </Card>
+
+      <!-- Security Section -->
+      <Card class="mb-6">
+        <template #title>Security</template>
+        <template #content>
+          <div class="flex flex-col gap-4">
+            <div>
+              <label class="block text-sm font-medium text-neutral-600 mb-1"
+                >Current Password</label
+              >
+              <Password
+                v-model="currentPassword"
+                :feedback="false"
+                toggle-mask
+                class="w-full"
+                input-class="w-full"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-neutral-600 mb-1"
+                >New Password</label
+              >
+              <Password
+                v-model="newPassword"
+                :feedback="false"
+                toggle-mask
+                class="w-full"
+                input-class="w-full"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-neutral-600 mb-1"
+                >Confirm New Password</label
+              >
+              <Password
+                v-model="confirmPassword"
+                :feedback="false"
+                toggle-mask
+                class="w-full"
+                input-class="w-full"
+              />
+            </div>
+            <p v-if="passwordError" class="text-sm text-red-600">
+              {{ passwordError }}
+            </p>
+            <small
+              v-else-if="!currentPassword || !newPassword || !confirmPassword"
+              class="text-neutral-400 text-xs"
+            >
+              Enter your current password, new password (min 8 characters), and
+              confirm to change.
+            </small>
+            <div>
               <Button
-                label="Save"
-                :loading="saving"
+                label="Change Password"
+                :loading="changingPassword"
+                :disabled="!canChangePassword"
                 size="small"
-                @click="saveDisplayName"
+                @click="handleChangePassword"
               />
             </div>
           </div>
-        </div>
-      </template>
-    </Card>
+        </template>
+      </Card>
 
-    <!-- Security Section -->
-    <Card class="mb-6">
-      <template #title>Security</template>
-      <template #content>
-        <div class="flex flex-col gap-4">
-          <div>
-            <label class="block text-sm font-medium text-neutral-600 mb-1"
-              >Current Password</label
-            >
-            <Password
-              v-model="currentPassword"
-              :feedback="false"
-              toggle-mask
-              class="w-full"
-              input-class="w-full"
+      <!-- Plan Section -->
+      <Card class="mb-6">
+        <template #title>
+          <div class="flex items-center gap-2">
+            <span>Your Plan</span>
+            <PlanBadge :plan="plan" />
+          </div>
+        </template>
+        <template #content>
+          <div class="flex flex-col gap-4">
+            <PlanUsage
+              label="Endpoints"
+              :current="endpointsUsed"
+              :max="endpointsMax"
             />
           </div>
-          <div>
-            <label class="block text-sm font-medium text-neutral-600 mb-1"
-              >New Password</label
-            >
-            <Password
-              v-model="newPassword"
-              :feedback="false"
-              toggle-mask
-              class="w-full"
-              input-class="w-full"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-neutral-600 mb-1"
-              >Confirm New Password</label
-            >
-            <Password
-              v-model="confirmPassword"
-              :feedback="false"
-              toggle-mask
-              class="w-full"
-              input-class="w-full"
-            />
-          </div>
-          <p v-if="passwordError" class="text-sm text-red-600">
-            {{ passwordError }}
+        </template>
+      </Card>
+
+      <!-- Upgrade CTA for Free users -->
+      <Card v-if="isFree" class="mb-6">
+        <template #title>Upgrade to Pro</template>
+        <template #content>
+          <p class="text-sm text-neutral-600 mb-4">
+            Get more endpoints, longer log retention, webhook replay, advanced
+            search, and custom headers.
           </p>
-          <div>
-            <Button
-              label="Change Password"
-              :loading="changingPassword"
-              :disabled="!canChangePassword"
-              size="small"
-              @click="handleChangePassword"
-            />
-          </div>
-        </div>
-      </template>
-    </Card>
+          <Button
+            label="Upgrade to Pro — 5€/month"
+            icon="pi pi-bolt"
+            :loading="checkoutLoading"
+            class="mb-4"
+            @click="handleUpgrade"
+          />
+          <PlanComparison />
+        </template>
+      </Card>
 
-    <!-- Plan Section -->
-    <Card class="mb-6">
-      <template #title>
-        <div class="flex items-center gap-2">
-          <span>Your Plan</span>
-          <PlanBadge :plan="plan" />
-        </div>
-      </template>
-      <template #content>
-        <div class="flex flex-col gap-4">
-          <PlanUsage
-            label="Endpoints"
-            :current="endpointsUsed"
-            :max="endpointsMax"
+      <!-- Plan features for Pro users -->
+      <Card v-else class="mb-6">
+        <template #title>Plan Features</template>
+        <template #content>
+          <Button
+            v-if="auth.profile?.stripe_customer_id"
+            label="Manage Subscription"
+            icon="pi pi-credit-card"
+            severity="secondary"
+            :loading="portalLoading"
+            class="mb-4"
+            @click="handleManageSubscription"
+          />
+          <PlanComparison />
+        </template>
+      </Card>
+
+      <!-- Danger Zone -->
+      <Card class="mb-6 border border-red-300">
+        <template #title>
+          <span class="text-red-700">Danger Zone</span>
+        </template>
+        <template #content>
+          <p class="text-sm text-neutral-600 mb-4">
+            Permanently delete your account, all endpoints, and webhook logs.
+            This action cannot be undone.
+          </p>
+          <Button
+            label="Delete Account"
+            severity="danger"
+            size="small"
+            @click="showDeleteDialog = true"
+          />
+        </template>
+      </Card>
+
+      <!-- Delete Confirmation Dialog -->
+      <Dialog
+        v-model:visible="showDeleteDialog"
+        header="Delete Account"
+        :modal="true"
+        :style="{ width: '28rem' }"
+      >
+        <p class="text-sm text-neutral-600 mb-4">
+          This will permanently delete your account, all endpoints, and all
+          webhook logs. This action cannot be undone.
+        </p>
+        <p class="text-sm font-medium text-neutral-700 mb-2">
+          Type <strong>DELETE</strong> or your email (<strong>{{
+            auth.user?.email
+          }}</strong
+          >) to confirm:
+        </p>
+        <InputText
+          v-model="deleteConfirmEmail"
+          class="w-full mb-4"
+          placeholder="Type DELETE or your email"
+        />
+        <div class="flex justify-end gap-2">
+          <Button
+            label="Cancel"
+            severity="secondary"
+            size="small"
+            @click="showDeleteDialog = false"
+          />
+          <Button
+            label="Delete Account"
+            severity="danger"
+            size="small"
+            :loading="deleting"
+            :disabled="!canDelete"
+            @click="handleDeleteAccount"
           />
         </div>
-      </template>
-    </Card>
-
-    <!-- Upgrade CTA for Free users -->
-    <Card v-if="isFree" class="mb-6">
-      <template #title>Upgrade to Pro</template>
-      <template #content>
-        <p class="text-sm text-neutral-600 mb-4">
-          Get more endpoints, longer log retention, webhook replay, advanced
-          search, and custom headers.
-        </p>
-        <Button
-          label="Upgrade to Pro — 5€/month"
-          icon="pi pi-bolt"
-          :loading="checkoutLoading"
-          class="mb-4"
-          @click="handleUpgrade"
-        />
-        <PlanComparison />
-      </template>
-    </Card>
-
-    <!-- Plan features for Pro users -->
-    <Card v-else class="mb-6">
-      <template #title>Plan Features</template>
-      <template #content>
-        <Button
-          v-if="auth.profile?.stripe_customer_id"
-          label="Manage Subscription"
-          icon="pi pi-credit-card"
-          severity="secondary"
-          :loading="portalLoading"
-          class="mb-4"
-          @click="handleManageSubscription"
-        />
-        <PlanComparison />
-      </template>
-    </Card>
-
-    <!-- Danger Zone -->
-    <Card class="mb-6 border border-red-300">
-      <template #title>
-        <span class="text-red-700">Danger Zone</span>
-      </template>
-      <template #content>
-        <p class="text-sm text-neutral-600 mb-4">
-          Permanently delete your account, all endpoints, and webhook logs. This
-          action cannot be undone.
-        </p>
-        <Button
-          label="Delete Account"
-          severity="danger"
-          size="small"
-          @click="showDeleteDialog = true"
-        />
-      </template>
-    </Card>
-
-    <!-- Delete Confirmation Dialog -->
-    <Dialog
-      v-model:visible="showDeleteDialog"
-      header="Delete Account"
-      :modal="true"
-      :style="{ width: '28rem' }"
-    >
-      <p class="text-sm text-neutral-600 mb-4">
-        This will permanently delete your account, all endpoints, and all
-        webhook logs. This action cannot be undone.
-      </p>
-      <p class="text-sm font-medium text-neutral-700 mb-2">
-        Type
-        <strong>{{ auth.user?.email }}</strong> to confirm:
-      </p>
-      <InputText
-        v-model="deleteConfirmEmail"
-        class="w-full mb-4"
-        placeholder="Enter your email"
-      />
-      <div class="flex justify-end gap-2">
-        <Button
-          label="Cancel"
-          severity="secondary"
-          size="small"
-          @click="showDeleteDialog = false"
-        />
-        <Button
-          label="Delete Account"
-          severity="danger"
-          size="small"
-          :loading="deleting"
-          :disabled="!canDelete"
-          @click="handleDeleteAccount"
-        />
-      </div>
-    </Dialog>
+      </Dialog>
+    </template>
   </div>
 </template>

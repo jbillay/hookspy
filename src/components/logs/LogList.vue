@@ -219,7 +219,20 @@ function onPageChange(event) {
       >
         <i class="pi pi-inbox text-xl text-neutral-400" />
       </div>
-      <p class="text-sm text-neutral-500">No webhook logs yet</p>
+      <p class="text-sm text-neutral-500 mb-2">
+        Logs will appear here when webhooks hit your endpoints.
+      </p>
+      <div class="mt-4 mx-auto max-w-lg text-left">
+        <p class="text-xs font-medium text-neutral-500 mb-2">
+          Quick test — send a webhook with curl:
+        </p>
+        <code
+          class="block text-xs bg-neutral-100 rounded-lg px-3 py-2 text-neutral-600 font-code overflow-x-auto whitespace-nowrap"
+        >
+          curl -X POST https://hookspy.dev/api/hook/YOUR_SLUG -H "Content-Type:
+          application/json" -d '{"test": true}'
+        </code>
+      </div>
     </div>
 
     <template v-else>

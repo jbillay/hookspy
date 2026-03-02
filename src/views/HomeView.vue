@@ -66,10 +66,19 @@ async function handleSubmit() {
 
 const currentYear = new Date().getFullYear()
 
+function scrollToSection(id) {
+  const el = document.getElementById(id)
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth' })
+  }
+}
+
 const isDark = ref(
   typeof localStorage !== 'undefined' &&
     localStorage.getItem('hs-dark-mode') === 'true',
 )
+
+const mobileNavOpen = ref(false)
 
 function toggleDarkMode() {
   isDark.value = !isDark.value
@@ -94,17 +103,20 @@ function toggleDarkMode() {
         <div class="hidden sm:flex items-center gap-6 text-sm">
           <a
             href="#how-it-works"
-            class="text-neutral-500 no-underline hover:text-neutral-900 transition-colors"
+            class="text-neutral-500 no-underline hover:text-neutral-900 transition-colors cursor-pointer"
+            @click.prevent="scrollToSection('how-it-works')"
             >How it works</a
           >
           <a
             href="#features"
-            class="text-neutral-500 no-underline hover:text-neutral-900 transition-colors"
+            class="text-neutral-500 no-underline hover:text-neutral-900 transition-colors cursor-pointer"
+            @click.prevent="scrollToSection('features')"
             >Features</a
           >
           <a
             href="#pricing"
-            class="text-neutral-500 no-underline hover:text-neutral-900 transition-colors"
+            class="text-neutral-500 no-underline hover:text-neutral-900 transition-colors cursor-pointer"
+            @click.prevent="scrollToSection('pricing')"
             >Pricing</a
           >
           <button
@@ -118,6 +130,61 @@ function toggleDarkMode() {
             to="/login"
             class="font-medium no-underline"
             style="color: var(--hs-brand)"
+            >Sign in</router-link
+          >
+        </div>
+        <!-- Mobile hamburger -->
+        <button
+          class="sm:hidden p-2 text-neutral-600 hover:text-neutral-900 bg-transparent border-0 cursor-pointer"
+          @click="mobileNavOpen = !mobileNavOpen"
+        >
+          <i :class="mobileNavOpen ? 'pi pi-times' : 'pi pi-bars'" />
+        </button>
+      </div>
+      <!-- Mobile nav dropdown -->
+      <div
+        v-if="mobileNavOpen"
+        class="sm:hidden pb-4 border-t border-neutral-100 pt-3 flex flex-col gap-2 px-4"
+      >
+        <a
+          href="#how-it-works"
+          class="text-sm text-neutral-600 no-underline py-2"
+          @click.prevent="
+            scrollToSection('how-it-works')
+            mobileNavOpen = false
+          "
+          >How it works</a
+        >
+        <a
+          href="#features"
+          class="text-sm text-neutral-600 no-underline py-2"
+          @click.prevent="
+            scrollToSection('features')
+            mobileNavOpen = false
+          "
+          >Features</a
+        >
+        <a
+          href="#pricing"
+          class="text-sm text-neutral-600 no-underline py-2"
+          @click.prevent="
+            scrollToSection('pricing')
+            mobileNavOpen = false
+          "
+          >Pricing</a
+        >
+        <div class="flex items-center gap-3 pt-2 border-t border-neutral-100">
+          <button
+            class="p-1.5 text-neutral-500 hover:text-neutral-700 transition-colors bg-transparent border-0 cursor-pointer"
+            @click="toggleDarkMode"
+          >
+            <i :class="isDark ? 'pi pi-sun' : 'pi pi-moon'" class="text-sm" />
+          </button>
+          <router-link
+            to="/login"
+            class="text-sm font-medium no-underline"
+            style="color: var(--hs-brand)"
+            @click="mobileNavOpen = false"
             >Sign in</router-link
           >
         </div>
@@ -142,7 +209,7 @@ function toggleDarkMode() {
               "
             >
               <i class="pi pi-bolt text-xs" />
-              Free during beta
+              Free to get started
             </div>
 
             <h1
@@ -169,8 +236,9 @@ function toggleDarkMode() {
               </button>
               <a
                 href="#how-it-works"
-                class="btn-outline inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold text-neutral-700 border-2 border-neutral-300 no-underline transition-all duration-200 hover:border-neutral-400 hover:shadow-sm"
+                class="btn-outline inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-base font-semibold text-neutral-700 border-2 border-neutral-300 no-underline transition-all duration-200 hover:border-neutral-400 hover:shadow-sm cursor-pointer"
                 style="background-color: var(--hs-bg-surface)"
+                @click.prevent="scrollToSection('how-it-works')"
               >
                 See how it works
                 <i class="pi pi-arrow-down text-sm" />
@@ -274,7 +342,7 @@ function toggleDarkMode() {
                 </div>
               </div>
               <p class="text-center text-xs text-neutral-400 mt-4">
-                No credit card required. Free forever during beta.
+                No credit card required. Free plan available forever.
               </p>
             </div>
           </div>
@@ -635,8 +703,8 @@ function toggleDarkMode() {
             Simple, transparent pricing
           </h2>
           <p class="text-neutral-500 max-w-2xl mx-auto leading-relaxed">
-            HookSpy is free while in beta. We're focused on building the best
-            webhook development experience before introducing paid plans.
+            Start free and upgrade when you need more endpoints, longer
+            retention, and advanced features.
           </p>
         </div>
 
@@ -650,16 +718,17 @@ function toggleDarkMode() {
               class="absolute -top-3 left-6 px-3 py-0.5 rounded-full text-xs font-semibold text-white"
               style="background-color: var(--hs-brand)"
             >
-              Current
+              Free forever
             </div>
-            <h3 class="text-lg font-semibold text-neutral-900 mb-1">Beta</h3>
+            <h3 class="text-lg font-semibold text-neutral-900 mb-1">Free</h3>
             <div class="flex items-baseline gap-1 mb-4">
               <span class="text-4xl font-bold text-neutral-900 font-display"
-                >Free</span
+                >0&euro;</span
               >
+              <span class="text-neutral-400 text-sm">/month</span>
             </div>
             <p class="text-sm text-neutral-500 mb-6">
-              Full access to all features while we're in beta.
+              Everything you need to get started with webhook development.
             </p>
             <ul class="flex flex-col gap-3 mb-8">
               <li class="flex items-center gap-2.5 text-sm text-neutral-700">
@@ -667,7 +736,7 @@ function toggleDarkMode() {
                   class="pi pi-check text-xs"
                   style="color: var(--hs-success)"
                 />
-                Unlimited endpoints
+                3 endpoints
               </li>
               <li class="flex items-center gap-2.5 text-sm text-neutral-700">
                 <i
@@ -681,7 +750,84 @@ function toggleDarkMode() {
                   class="pi pi-check text-xs"
                   style="color: var(--hs-success)"
                 />
-                Request inspection & replay
+                Request inspection
+              </li>
+              <li class="flex items-center gap-2.5 text-sm text-neutral-700">
+                <i
+                  class="pi pi-check text-xs"
+                  style="color: var(--hs-success)"
+                />
+                6-hour log retention
+              </li>
+              <li class="flex items-center gap-2.5 text-sm text-neutral-700">
+                <i
+                  class="pi pi-check text-xs"
+                  style="color: var(--hs-success)"
+                />
+                30 requests/min rate limit
+              </li>
+            </ul>
+            <button
+              class="btn-brand w-full py-3"
+              @click="router.push({ name: 'register' })"
+            >
+              Get started free
+            </button>
+          </div>
+
+          <!-- Pro plan -->
+          <div class="card-surface p-8 relative">
+            <div
+              class="absolute -top-3 left-6 px-3 py-0.5 rounded-full text-xs font-semibold text-white"
+              style="background-color: #7c3aed"
+            >
+              Recommended
+            </div>
+            <h3 class="text-lg font-semibold text-neutral-900 mb-1">Pro</h3>
+            <div class="flex items-baseline gap-1 mb-4">
+              <span class="text-4xl font-bold text-neutral-900 font-display"
+                >5&euro;</span
+              >
+              <span class="text-neutral-400 text-sm">/month</span>
+            </div>
+            <p class="text-sm text-neutral-500 mb-6">
+              For serious webhook development with advanced features.
+            </p>
+            <ul class="flex flex-col gap-3 mb-8">
+              <li class="flex items-center gap-2.5 text-sm text-neutral-700">
+                <i
+                  class="pi pi-check text-xs"
+                  style="color: var(--hs-success)"
+                />
+                25 endpoints
+              </li>
+              <li class="flex items-center gap-2.5 text-sm text-neutral-700">
+                <i
+                  class="pi pi-check text-xs"
+                  style="color: var(--hs-success)"
+                />
+                7-day log retention
+              </li>
+              <li class="flex items-center gap-2.5 text-sm text-neutral-700">
+                <i
+                  class="pi pi-check text-xs"
+                  style="color: var(--hs-success)"
+                />
+                120 requests/min rate limit
+              </li>
+              <li class="flex items-center gap-2.5 text-sm text-neutral-700">
+                <i
+                  class="pi pi-check text-xs"
+                  style="color: var(--hs-success)"
+                />
+                One-click replay
+              </li>
+              <li class="flex items-center gap-2.5 text-sm text-neutral-700">
+                <i
+                  class="pi pi-check text-xs"
+                  style="color: var(--hs-success)"
+                />
+                Advanced search &amp; filtering
               </li>
               <li class="flex items-center gap-2.5 text-sm text-neutral-700">
                 <i
@@ -695,58 +841,14 @@ function toggleDarkMode() {
                   class="pi pi-check text-xs"
                   style="color: var(--hs-success)"
                 />
-                24-hour log retention
+                5 MB max body size
               </li>
             </ul>
-            <p class="text-xs text-neutral-400 mb-6 -mt-4">
-              Requests are stored for 24 hours and then permanently deleted.
-            </p>
             <button
               class="btn-brand w-full py-3"
               @click="router.push({ name: 'register' })"
             >
-              Get started free
-            </button>
-          </div>
-
-          <!-- Pro plan (coming soon) -->
-          <div class="card-surface p-8 opacity-80">
-            <h3 class="text-lg font-semibold text-neutral-900 mb-1">Pro</h3>
-            <div class="flex items-baseline gap-1 mb-4">
-              <span class="text-4xl font-bold text-neutral-300 font-display"
-                >TBD</span
-              >
-            </div>
-            <p class="text-sm text-neutral-500 mb-6">
-              Coming soon &mdash; longer retention, team features, and more.
-            </p>
-            <ul class="flex flex-col gap-3 mb-8">
-              <li class="flex items-center gap-2.5 text-sm text-neutral-400">
-                <i class="pi pi-check text-xs text-neutral-300" />
-                Everything in Beta
-              </li>
-              <li class="flex items-center gap-2.5 text-sm text-neutral-400">
-                <i class="pi pi-check text-xs text-neutral-300" />
-                Extended log retention
-              </li>
-              <li class="flex items-center gap-2.5 text-sm text-neutral-400">
-                <i class="pi pi-check text-xs text-neutral-300" />
-                Team collaboration
-              </li>
-              <li class="flex items-center gap-2.5 text-sm text-neutral-400">
-                <i class="pi pi-check text-xs text-neutral-300" />
-                Webhook transformations
-              </li>
-              <li class="flex items-center gap-2.5 text-sm text-neutral-400">
-                <i class="pi pi-check text-xs text-neutral-300" />
-                Priority support
-              </li>
-            </ul>
-            <button
-              class="w-full py-3 rounded-lg text-sm font-semibold border border-neutral-200 text-neutral-400 cursor-not-allowed"
-              disabled
-            >
-              Coming soon
+              Upgrade to Pro
             </button>
           </div>
         </div>

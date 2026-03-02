@@ -172,6 +172,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function resetPassword(email) {
+    const { client } = useSupabase()
+    const { error } = await client.auth.resetPasswordForEmail(email)
+    return { error }
+  }
+
   function destroy() {
     if (authSubscription) {
       authSubscription.unsubscribe()
@@ -196,6 +202,7 @@ export const useAuthStore = defineStore('auth', () => {
     signOut,
     changePassword,
     deleteAccount,
+    resetPassword,
     destroy,
   }
 })
