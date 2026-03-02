@@ -1,10 +1,10 @@
 const ALLOWED_ORIGINS = getAllowedOrigins()
 
 function getAllowedOrigins() {
-  const appUrl = process.env.VITE_APP_URL
+  const appUrl = process.env.APP_URL || process.env.VITE_APP_URL
   if (!appUrl) {
     console.warn(
-      'VITE_APP_URL is not set — CORS will reject all cross-origin requests',
+      'APP_URL is not set — CORS will reject all cross-origin requests',
     )
     return []
   }

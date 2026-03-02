@@ -116,7 +116,7 @@ describe('Stripe API handler', () => {
     process.env.STRIPE_SECRET_KEY = 'sk_test_123'
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_123'
     process.env.STRIPE_PRICE_ID = 'price_test_123'
-    process.env.VITE_APP_URL = 'https://hookspy.dev'
+    process.env.APP_URL = 'https://hookspy.dev'
   })
 
   describe('Method validation', () => {

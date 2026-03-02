@@ -72,8 +72,8 @@ async function handleCheckout(req, res) {
       mode: 'subscription',
       line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
       client_reference_id: user.id,
-      success_url: `${process.env.VITE_APP_URL}/settings?checkout=success`,
-      cancel_url: `${process.env.VITE_APP_URL}/settings?checkout=cancel`,
+      success_url: `${process.env.APP_URL}/settings?checkout=success`,
+      cancel_url: `${process.env.APP_URL}/settings?checkout=cancel`,
       metadata: { user_id: user.id },
       subscription_data: {
         metadata: { user_id: user.id },
@@ -111,7 +111,7 @@ async function handlePortal(req, res) {
   try {
     const session = await stripe.billingPortal.sessions.create({
       customer: profile.stripe_customer_id,
-      return_url: `${process.env.VITE_APP_URL}/settings`,
+      return_url: `${process.env.APP_URL}/settings`,
     })
     return res.status(200).json({ url: session.url })
   } catch (err) {
