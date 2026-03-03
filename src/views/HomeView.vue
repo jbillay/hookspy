@@ -73,6 +73,11 @@ function scrollToSection(id) {
   }
 }
 
+function mobileNavTo(id) {
+  scrollToSection(id)
+  mobileNavOpen.value = false
+}
+
 const isDark = ref(
   typeof localStorage !== 'undefined' &&
     localStorage.getItem('hs-dark-mode') === 'true',
@@ -149,28 +154,19 @@ function toggleDarkMode() {
         <a
           href="#how-it-works"
           class="text-sm text-neutral-600 no-underline py-2"
-          @click.prevent="
-            scrollToSection('how-it-works')
-            mobileNavOpen = false
-          "
+          @click.prevent="mobileNavTo('how-it-works')"
           >How it works</a
         >
         <a
           href="#features"
           class="text-sm text-neutral-600 no-underline py-2"
-          @click.prevent="
-            scrollToSection('features')
-            mobileNavOpen = false
-          "
+          @click.prevent="mobileNavTo('features')"
           >Features</a
         >
         <a
           href="#pricing"
           class="text-sm text-neutral-600 no-underline py-2"
-          @click.prevent="
-            scrollToSection('pricing')
-            mobileNavOpen = false
-          "
+          @click.prevent="mobileNavTo('pricing')"
           >Pricing</a
         >
         <div class="flex items-center gap-3 pt-2 border-t border-neutral-100">

@@ -34,6 +34,9 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: Build
+        run: npm run build
+
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
