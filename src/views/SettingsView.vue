@@ -120,11 +120,11 @@ async function handleUpgrade() {
       const { url } = await res.json()
       window.location.href = url
     } else {
-      const { error } = await res.json()
+      const { error, detail } = await res.json()
       toast.add({
         severity: 'error',
         summary: 'Error',
-        detail: error || 'Failed to start checkout',
+        detail: detail || error || 'Failed to start checkout',
         life: 5000,
       })
     }
