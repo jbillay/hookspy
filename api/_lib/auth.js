@@ -25,7 +25,7 @@ export async function verifyAuth(req) {
   // Fetch profile with plan/role/status for lazy invalidation
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('plan, role, status')
+    .select('plan, role, status, email, stripe_customer_id, stripe_subscription_id')
     .eq('id', user.id)
     .single()
 
