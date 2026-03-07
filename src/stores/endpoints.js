@@ -170,6 +170,13 @@ export const useEndpointsStore = defineStore('endpoints', () => {
     }
   }
 
+  function $reset() {
+    endpoints.value = []
+    loading.value = false
+    initialLoaded.value = false
+    error.value = null
+  }
+
   return {
     endpoints,
     loading,
@@ -181,5 +188,6 @@ export const useEndpointsStore = defineStore('endpoints', () => {
     deleteEndpoint,
     toggleActive,
     getEndpoint,
+    $reset,
   }
 })

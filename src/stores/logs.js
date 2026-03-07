@@ -234,6 +234,21 @@ export const useLogsStore = defineStore('logs', () => {
     transport.unsubscribe('log-viewer')
   }
 
+  function $reset() {
+    stopSubscription()
+    logs.value = []
+    loading.value = false
+    error.value = null
+    totalCount.value = 0
+    currentPage.value = 1
+    endpointFilter.value = null
+    methodFilter.value = []
+    statusFilter.value = []
+    searchQuery.value = ''
+    dateFrom.value = null
+    dateTo.value = null
+  }
+
   return {
     logs,
     loading,
@@ -259,5 +274,6 @@ export const useLogsStore = defineStore('logs', () => {
     replayLog,
     startSubscription,
     stopSubscription,
+    $reset,
   }
 })

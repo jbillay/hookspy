@@ -114,6 +114,14 @@ export const useAuthStore = defineStore('auth', () => {
     const { client } = useSupabase()
     loading.value = true
     try {
+      // Reset dependent stores to clear stale data
+      const { useEndpointsStore } = await import('./endpoints.js')
+      const { useLogsStore } = await import('./logs.js')
+      const { useRelayStore } = await import('./relay.js')
+      useEndpointsStore().$reset()
+      useLogsStore().$reset()
+      useRelayStore().$reset()
+
       const { error } = await client.auth.signOut()
       if (error) return { error }
       user.value = null

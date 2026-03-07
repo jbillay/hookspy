@@ -234,6 +234,12 @@ export const useRelayStore = defineStore('relay', () => {
     }
   }
 
+  function $reset() {
+    stopRelay()
+    forwardingCount.value = 0
+    lastError.value = null
+  }
+
   return {
     relayStatus,
     forwardingCount,
@@ -244,5 +250,6 @@ export const useRelayStore = defineStore('relay', () => {
     forwardWebhook,
     buildTargetUrl,
     filterHeaders,
+    $reset,
   }
 })
