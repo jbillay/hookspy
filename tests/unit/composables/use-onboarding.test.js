@@ -84,4 +84,38 @@ describe('useOnboarding', () => {
     expect(mockSupabaseUpdate).not.toHaveBeenCalled()
     expect(mockFetchProfile).not.toHaveBeenCalled()
   })
+
+  it('shouldShowTour becomes false after completeTour refreshes profile', async () => {
+    mockAuth.user = { id: 'user-123' }
+    mockAuth.profile = { onboarding_completed_at: null }
+
+    const { shouldShowTour, completeTour } = useOnboarding()
+    expect(shouldShowTour.value).toBe(true)
+
+    // Simulate fetchProfile updating the profile with the timestamp
+    mockFetchProfile.mockImplementation(() => {
+      mockAuth.profile = {
+        onboarding_completed_at: '2026-03-07T00:00:00Z',
+      }
+    })
+
+    await completeTour()
+
+    expect(shouldShowTour.value).toBe(false)
+  })
+
+  it('completeTour writes an ISO timestamp to onboarding_completed_at', async () => {
+    mockAuth.user = { id: 'user-123' }
+    mockAuth.profile = { onboarding_completed_at: null }
+
+    const { completeTour } = useOnboarding()
+    await completeTour()
+
+    const callArg = mockSupabaseUpdate.mock.calls[0][0]
+    // Verify the timestamp is a valid ISO string
+    expect(new Date(callArg.onboarding_completed_at).toISOString()).toBe(
+      callArg.onboarding_completed_at,
+    )
+    expect(mockEq).toHaveBeenCalledWith('id', 'user-123')
+  })
 })

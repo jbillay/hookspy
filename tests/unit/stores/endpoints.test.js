@@ -428,4 +428,21 @@ describe('Endpoints Store', () => {
       expect(store.endpoints[0].id).toBe('ep-1')
     })
   })
+
+  describe('$reset', () => {
+    it('clears all state back to initial values', () => {
+      const store = useEndpointsStore()
+      store.endpoints = [mockEndpoint]
+      store.loading = true
+      store.initialLoaded = true
+      store.error = 'something went wrong'
+
+      store.$reset()
+
+      expect(store.endpoints).toEqual([])
+      expect(store.loading).toBe(false)
+      expect(store.initialLoaded).toBe(false)
+      expect(store.error).toBeNull()
+    })
+  })
 })

@@ -5,6 +5,22 @@ import { useAuthStore } from '../../../src/stores/auth.js'
 const mockUser = { id: 'user-123', email: 'test@example.com' }
 const mockSession = { access_token: 'token-abc', user: mockUser }
 
+const mockEndpointsReset = vi.fn()
+const mockLogsReset = vi.fn()
+const mockRelayReset = vi.fn()
+
+vi.mock('../../../src/stores/endpoints.js', () => ({
+  useEndpointsStore: () => ({ $reset: mockEndpointsReset }),
+}))
+
+vi.mock('../../../src/stores/logs.js', () => ({
+  useLogsStore: () => ({ $reset: mockLogsReset }),
+}))
+
+vi.mock('../../../src/stores/relay.js', () => ({
+  useRelayStore: () => ({ $reset: mockRelayReset }),
+}))
+
 let mockAuthMethods
 
 vi.mock('../../../src/composables/use-supabase.js', () => ({
@@ -201,6 +217,22 @@ describe('Auth Store', () => {
 
       await promise
       expect(store.loading).toBe(false)
+    })
+
+    it('resets endpoints, logs, and relay stores on signOut', async () => {
+      mockEndpointsReset.mockClear()
+      mockLogsReset.mockClear()
+      mockRelayReset.mockClear()
+
+      const store = useAuthStore()
+      store.user = mockUser
+      store.session = mockSession
+
+      await store.signOut()
+
+      expect(mockEndpointsReset).toHaveBeenCalled()
+      expect(mockLogsReset).toHaveBeenCalled()
+      expect(mockRelayReset).toHaveBeenCalled()
     })
   })
 

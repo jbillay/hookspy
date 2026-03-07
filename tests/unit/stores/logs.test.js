@@ -431,4 +431,36 @@ describe('Logs Store', () => {
       expect(store.logs).toHaveLength(1) // second log not added
     })
   })
+
+  describe('$reset', () => {
+    it('clears all state and stops subscription', () => {
+      const store = useLogsStore()
+      store.logs = [{ id: 'log-1' }]
+      store.loading = true
+      store.error = 'something went wrong'
+      store.totalCount = 42
+      store.currentPage = 3
+      store.endpointFilter = 'ep-1'
+      store.methodFilter = ['POST']
+      store.statusFilter = ['error']
+      store.searchQuery = 'test'
+      store.dateFrom = new Date()
+      store.dateTo = new Date()
+
+      store.$reset()
+
+      expect(store.logs).toEqual([])
+      expect(store.loading).toBe(false)
+      expect(store.error).toBeNull()
+      expect(store.totalCount).toBe(0)
+      expect(store.currentPage).toBe(1)
+      expect(store.endpointFilter).toBeNull()
+      expect(store.methodFilter).toEqual([])
+      expect(store.statusFilter).toEqual([])
+      expect(store.searchQuery).toBe('')
+      expect(store.dateFrom).toBeNull()
+      expect(store.dateTo).toBeNull()
+      expect(mockTransport.unsubscribe).toHaveBeenCalledWith('log-viewer')
+    })
+  })
 })

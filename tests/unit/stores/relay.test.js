@@ -496,4 +496,19 @@ describe('Relay Store', () => {
       consoleSpy.mockRestore()
     })
   })
+
+  describe('$reset', () => {
+    it('stops relay and clears all state', async () => {
+      const store = useRelayStore()
+      await store.startRelay()
+      store.forwardingCount = 3
+      store.lastError = 'some error'
+
+      store.$reset()
+
+      expect(store.forwardingCount).toBe(0)
+      expect(store.lastError).toBeNull()
+      expect(mockTransport.unsubscribe).toHaveBeenCalledWith('relay-worker')
+    })
+  })
 })
