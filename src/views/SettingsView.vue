@@ -20,9 +20,11 @@ const toast = useToast()
 const route = useRoute()
 const router = useRouter()
 
-// Stripe checkout/portal
+// Stripe checkout/portal/cancel
 const checkoutLoading = ref(false)
 const portalLoading = ref(false)
+const showCancelDialog = ref(false)
+const cancelLoading = ref(false)
 
 const displayName = ref('')
 const saving = ref(false)
@@ -87,13 +89,33 @@ onMounted(async () => {
   // Handle checkout return query params
   const checkoutStatus = route.query.checkout
   if (checkoutStatus === 'success') {
-    toast.add({
-      severity: 'success',
-      summary: 'Welcome to Pro!',
-      detail: 'Your account has been upgraded.',
-      life: 5000,
-    })
-    await auth.fetchProfile()
+    // Poll for profile upgrade — the Stripe webhook may take a moment to process
+    let upgraded = false
+    for (let i = 0; i < 10; i++) {
+      await auth.fetchProfile()
+      if (auth.profile?.plan === 'pro') {
+        upgraded = true
+        break
+      }
+      await new Promise((r) => setTimeout(r, 2000))
+    }
+
+    if (upgraded) {
+      toast.add({
+        severity: 'success',
+        summary: 'Welcome to Pro!',
+        detail: 'Your account has been upgraded.',
+        life: 5000,
+      })
+    } else {
+      toast.add({
+        severity: 'warn',
+        summary: 'Payment Received',
+        detail:
+          'Your payment was successful but the upgrade is still processing. Please refresh in a moment.',
+        life: 8000,
+      })
+    }
     router.replace({ path: '/settings' })
   } else if (checkoutStatus === 'cancel') {
     toast.add({
@@ -171,6 +193,46 @@ async function handleManageSubscription() {
     })
   } finally {
     portalLoading.value = false
+  }
+}
+
+async function handleCancelSubscription() {
+  cancelLoading.value = true
+  try {
+    const res = await fetch('/api/stripe/cancel', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${auth.session?.access_token}`,
+      },
+    })
+
+    if (res.ok) {
+      showCancelDialog.value = false
+      await auth.fetchProfile()
+      toast.add({
+        severity: 'success',
+        summary: 'Subscription Canceled',
+        detail: 'Your account has been downgraded to Free.',
+        life: 5000,
+      })
+    } else {
+      const { error } = await res.json()
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error || 'Failed to cancel subscription',
+        life: 5000,
+      })
+    }
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to cancel subscription',
+      life: 5000,
+    })
+  } finally {
+    cancelLoading.value = false
   }
 }
 
@@ -429,18 +491,60 @@ async function handleDeleteAccount() {
       <Card v-else class="mb-6">
         <template #title>Plan Features</template>
         <template #content>
-          <Button
+          <div
             v-if="auth.profile?.stripe_customer_id"
-            label="Manage Subscription"
-            icon="pi pi-credit-card"
-            severity="secondary"
-            :loading="portalLoading"
-            class="mb-4"
-            @click="handleManageSubscription"
-          />
+            class="flex items-center gap-2 mb-4"
+          >
+            <Button
+              label="Manage Subscription"
+              icon="pi pi-credit-card"
+              severity="secondary"
+              :loading="portalLoading"
+              @click="handleManageSubscription"
+            />
+            <Button
+              label="Cancel Subscription"
+              icon="pi pi-times"
+              severity="danger"
+              outlined
+              @click="showCancelDialog = true"
+            />
+          </div>
           <PlanComparison />
         </template>
       </Card>
+
+      <!-- Cancel Subscription Confirmation Dialog -->
+      <Dialog
+        v-model:visible="showCancelDialog"
+        header="Cancel Subscription"
+        :modal="true"
+        :style="{ width: '28rem' }"
+      >
+        <p class="text-sm text-neutral-600 mb-2">
+          Are you sure you want to cancel your Pro subscription?
+        </p>
+        <ul class="text-sm text-neutral-600 mb-4 list-disc pl-5">
+          <li>Your plan will be downgraded to Free immediately</li>
+          <li>Excess endpoints will be deactivated</li>
+          <li>You will lose access to Pro features</li>
+        </ul>
+        <div class="flex justify-end gap-2">
+          <Button
+            label="Keep Pro"
+            severity="secondary"
+            size="small"
+            @click="showCancelDialog = false"
+          />
+          <Button
+            label="Cancel Subscription"
+            severity="danger"
+            size="small"
+            :loading="cancelLoading"
+            @click="handleCancelSubscription"
+          />
+        </div>
+      </Dialog>
 
       <!-- Danger Zone -->
       <Card class="mb-6 border border-red-300">

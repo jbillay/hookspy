@@ -50,6 +50,10 @@ export default async function handler(req, res) {
     return handlePortal(req, res)
   }
 
+  if (route === 'cancel') {
+    return handleCancel(req, res)
+  }
+
   return res.status(404).json({ error: 'Not found' })
 }
 
@@ -119,6 +123,31 @@ async function handlePortal(req, res) {
   } catch (err) {
     console.error('Failed to create portal session:', err.message)
     return res.status(500).json({ error: 'Failed to create portal session' })
+  }
+}
+
+// --- Route: cancel ---
+
+async function handleCancel(req, res) {
+  await getRawBody(req)
+
+  const { user, profile, error: authError } = await verifyAuth(req)
+  if (authError || !user) {
+    return res.status(401).json({ error: authError })
+  }
+
+  if (profile.plan !== 'pro' || !profile.stripe_subscription_id) {
+    return res
+      .status(400)
+      .json({ error: 'No active Pro subscription to cancel' })
+  }
+
+  try {
+    await stripe.subscriptions.cancel(profile.stripe_subscription_id)
+    return res.status(200).json({ success: true })
+  } catch (err) {
+    console.error('Failed to cancel subscription:', err.message)
+    return res.status(500).json({ error: 'Failed to cancel subscription' })
   }
 }
 

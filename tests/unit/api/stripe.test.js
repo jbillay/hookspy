@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const mockCheckoutSessionsCreate = vi.fn()
 const mockBillingPortalSessionsCreate = vi.fn()
 const mockWebhooksConstructEvent = vi.fn()
+const mockSubscriptionsCancel = vi.fn()
 
 function MockStripe() {
   return {
@@ -15,6 +16,9 @@ function MockStripe() {
     },
     webhooks: {
       constructEvent: mockWebhooksConstructEvent,
+    },
+    subscriptions: {
+      cancel: mockSubscriptionsCancel,
     },
   }
 }
@@ -620,6 +624,112 @@ describe('Stripe API handler', () => {
       // Still calls downgradeToFree (it's idempotent)
       expect(mockDowngradeToFree).toHaveBeenCalledWith('user-1')
       expect(res.status).toHaveBeenCalledWith(200)
+    })
+  })
+
+  describe('Cancel route', () => {
+    it('rejects missing auth', async () => {
+      mockVerifyAuth.mockResolvedValue({
+        user: null,
+        profile: null,
+        error: 'Missing or invalid Authorization header',
+      })
+
+      const { default: handler } = await import('../../../api/stripe/index.js')
+      const req = createMockReq({ route: 'cancel' })
+      const res = createMockRes()
+
+      await handler(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(401)
+    })
+
+    it('rejects free user without subscription', async () => {
+      mockVerifyAuth.mockResolvedValue({
+        user: { id: 'user-1' },
+        profile: {
+          plan: 'free',
+          stripe_subscription_id: null,
+        },
+        error: null,
+      })
+
+      const { default: handler } = await import('../../../api/stripe/index.js')
+      const req = createMockReq({ route: 'cancel' })
+      const res = createMockRes()
+
+      await handler(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(400)
+      expect(res.body.error).toMatch(/No active Pro subscription/)
+    })
+
+    it('rejects pro user without stripe_subscription_id (admin-promoted)', async () => {
+      mockVerifyAuth.mockResolvedValue({
+        user: { id: 'user-1' },
+        profile: {
+          plan: 'pro',
+          stripe_subscription_id: null,
+        },
+        error: null,
+      })
+
+      const { default: handler } = await import('../../../api/stripe/index.js')
+      const req = createMockReq({ route: 'cancel' })
+      const res = createMockRes()
+
+      await handler(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(400)
+      expect(res.body.error).toMatch(/No active Pro subscription/)
+    })
+
+    it('cancels subscription for pro user with active subscription', async () => {
+      mockVerifyAuth.mockResolvedValue({
+        user: { id: 'user-1' },
+        profile: {
+          plan: 'pro',
+          stripe_subscription_id: 'sub_123',
+        },
+        error: null,
+      })
+      mockSubscriptionsCancel.mockResolvedValue({
+        id: 'sub_123',
+        status: 'canceled',
+      })
+
+      const { default: handler } = await import('../../../api/stripe/index.js')
+      const req = createMockReq({ route: 'cancel' })
+      const res = createMockRes()
+
+      await handler(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(200)
+      expect(res.body).toEqual({ success: true })
+      expect(mockSubscriptionsCancel).toHaveBeenCalledWith('sub_123')
+    })
+
+    it('returns 500 when Stripe cancel fails', async () => {
+      mockVerifyAuth.mockResolvedValue({
+        user: { id: 'user-1' },
+        profile: {
+          plan: 'pro',
+          stripe_subscription_id: 'sub_123',
+        },
+        error: null,
+      })
+      mockSubscriptionsCancel.mockRejectedValue(new Error('Stripe error'))
+
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const { default: handler } = await import('../../../api/stripe/index.js')
+      const req = createMockReq({ route: 'cancel' })
+      const res = createMockRes()
+
+      await handler(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(500)
+      expect(res.body.error).toMatch(/Failed to cancel/)
+      consoleSpy.mockRestore()
     })
   })
 
